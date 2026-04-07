@@ -732,7 +732,13 @@ function guardarRecibo() {
   }
 
   saveDB();
-  sincronizar('saveReceipt',rec);
+  sincronizar('saveReceipt', rec);
+  // Sincronizar clientes y puntos si es venta
+  if(tipo==='Venta') {
+    sincronizar('saveCliente', db.clientes);
+    sincronizar('savePuntos', db.puntos);
+    if(pago==='credito') sincronizar('saveDeudor', db.deudores);
+  }
   renderResumenHoy();
   renderUltimas();
   actualizarConsecutivo();
