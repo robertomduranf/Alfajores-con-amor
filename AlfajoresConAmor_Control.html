@@ -91,12 +91,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
 .flex-end{display:flex;justify-content:flex-end;gap:10px;}
 .mt-8{margin-top:8px;}.mb-0{margin-bottom:0;}.w100{width:100%;}
 </style>
-<link rel="manifest" href="./manifest.json">
-<meta name="theme-color" content="#824913">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="AlfajoresControl">
-<link rel="apple-touch-icon" href="./icon-192.png">
 </head>
 <body>
 
@@ -122,7 +116,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
-      <button id="btn-instalar" class="btn-logout" style="display:none;background:rgba(255,255,255,.35);" onclick="instalarPWA()">&#x1F4F2; Instalar App</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </header>
@@ -136,6 +129,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
     <button class="tab-btn" data-tab="balance" onclick="switchTab(this)">&#x2696;&#xFE0F; Balance</button>
     <button class="tab-btn" data-tab="agregar-cliente" onclick="switchTab(this)">&#x2795; Cliente</button>
     <button class="tab-btn" data-tab="crm" onclick="switchTab(this)">&#x1F465; CRM</button>
+    <button class="tab-btn" data-tab="postventa" onclick="switchTab(this)">&#x1F4AC; Postventa</button>
     <button class="tab-btn" data-tab="ejecutivo" onclick="switchTab(this)">&#x1F3C6; Ejecutivo</button>
     <button class="tab-btn" data-tab="admin" onclick="switchTab(this)">&#x2699;&#xFE0F; Admin</button>
   </div>
@@ -240,6 +234,18 @@ tr:hover td{background:rgba(130,73,19,.04);}
       </div>
     </div>
 
+    <!-- POSTVENTA -->
+    <div class="tab-pane" id="tab-postventa">
+      <div class="card">
+        <h3>&#x1F4AC; Postventa</h3>
+        <p style="color:#6b4226;font-size:.9rem;margin-bottom:16px;">Clientes que han comprado y a&uacute;n no han recibido el mensaje de postventa.</p>
+        <div class="form-group" style="max-width:320px;margin-bottom:14px;">
+          <input type="text" id="pv-buscar" placeholder="Buscar cliente..." oninput="renderPostventa()">
+        </div>
+        <div id="postventa-lista"></div>
+      </div>
+    </div>
+
     <!-- EJECUTIVO -->
     <div class="tab-pane" id="tab-ejecutivo">
       <div class="card"><h3>&#x1F3C6; Resumen Ejecutivo</h3>
@@ -264,6 +270,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group"><label>Mensaje al vender (contado)</label><textarea id="cfg-wamsg" rows="3"></textarea><small>Variables: {nombre}</small></div>
           <div class="form-group"><label>Recordatorio de cobro</label><textarea id="cfg-wacobro" rows="4"></textarea><small>Variables: {nombre} {fecha} {valor}</small></div>
           <div class="form-group"><label>Mensaje Puntos Dulces</label><textarea id="cfg-wapuntos" rows="4"></textarea><small>Variables: {nombre} {puntos} {descuento} {fecha}</small></div>
+          <div class="form-group"><label>Mensaje Postventa</label><textarea id="cfg-wapostventa" rows="3"></textarea><small>Variable: {nombre}</small></div>
           <button class="btn btn-primary" onclick="guardarWaConfig()">Guardar Mensajes WA</button>
         </div>
 
@@ -367,6 +374,7 @@ var db = {
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
+    waMsgPostventa: 'Hola {nombre}, \u00BFqu\u00e9 tal te parecieron los Alfajores? Esperamos que los hayas disfrutado much\u00edsimo \uD83E\uDDC1 Tu opini\u00f3n es muy importante para nosotros.',
     waMsgPuntos: 'Hola {nombre}, tienes acumulado {puntos} Puntos Dulces \uD83C\uDF6B \u00A1Has ganado un bono descuento de {descuento}% disponible hasta {fecha}! No te lo pierdas, \u00FAs\u00E1lo en tu pr\u00F3xima compra. \uD83E\uDDC1',
     ptosPorMil: 1,
     ptosReferido: 50,
@@ -510,6 +518,7 @@ function switchTab(btn) {
   if(tab==='pyg'){setDefaultDates('pyg-desde','pyg-hasta');calcPyG();}
   if(tab==='balance') calcBalance();
   if(tab==='crm') renderCRM();
+  if(tab==='postventa') renderPostventa();
   if(tab==='ejecutivo') calcEjecutivo();
   if(tab==='admin') initAdmin();
   if(tab==='deudores') renderDeudores();
@@ -1038,6 +1047,7 @@ function initAdmin() {
   document.getElementById('cfg-wamsg').value=db.config.waMsgTemplate||'';
   document.getElementById('cfg-wacobro').value=db.config.waMsgCobro||'';
   document.getElementById('cfg-wapuntos').value=db.config.waMsgPuntos||'';
+  document.getElementById('cfg-wapostventa').value=db.config.waMsgPostventa||'';
   document.getElementById('cfg-ptosmil').value=db.config.ptosPorMil||1;
   document.getElementById('cfg-ptosref').value=db.config.ptosReferido||50;
   document.getElementById('cfg-ptosumbral').value=db.config.ptosUmbral||100;
@@ -1069,6 +1079,7 @@ function guardarWaConfig() {
   db.config.waMsgTemplate=document.getElementById('cfg-wamsg').value.trim();
   db.config.waMsgCobro=document.getElementById('cfg-wacobro').value.trim();
   db.config.waMsgPuntos=document.getElementById('cfg-wapuntos').value.trim();
+  db.config.waMsgPostventa=document.getElementById('cfg-wapostventa').value.trim();
   saveDB();
   sincronizar('saveConfig',db.config);
   alert('Configuraci\u00f3n WhatsApp guardada \u2713');
@@ -1302,109 +1313,76 @@ function fmt(n) {
 }
 
 
-
-/* ===================== PWA ===================== */
-var deferredPrompt = null;
-
-// Registrar Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('./sw.js').then(function(reg) {
-      console.log('SW registrado:', reg.scope);
-      // Escuchar mensajes del SW
-      navigator.serviceWorker.addEventListener('message', function(e) {
-        if (e.data && e.data.tipo === 'CHECK_COBROS') {
-          verificarCobrosNotif();
-        }
-      });
-    }).catch(function(err) {
-      console.warn('SW error:', err);
-    });
+/* ===================== POSTVENTA ===================== */
+function renderPostventa() {
+  var q = (document.getElementById('pv-buscar').value || '').toLowerCase();
+  var lista = document.getElementById('postventa-lista');
+  if (!lista) return;
+  var clientesMap = {};
+  db.recibos.filter(function(r) { return r.tipo === 'Venta' && r.cliente; }).forEach(function(r) {
+    var key = r.cliente.toLowerCase();
+    if (!clientesMap[key]) clientesMap[key] = { nombre: r.cliente, tel: r.tel || '', ultimaCompra: r.fecha };
+    if (r.fecha > clientesMap[key].ultimaCompra) {
+      clientesMap[key].ultimaCompra = r.fecha;
+      if (r.tel) clientesMap[key].tel = r.tel;
+    }
   });
-}
-
-// Capturar evento de instalación
-window.addEventListener('beforeinstallprompt', function(e) {
-  e.preventDefault();
-  deferredPrompt = e;
-  var btn = document.getElementById('btn-instalar');
-  if (btn) btn.style.display = '';
-});
-
-window.addEventListener('appinstalled', function() {
-  deferredPrompt = null;
-  var btn = document.getElementById('btn-instalar');
-  if (btn) btn.style.display = 'none';
-});
-
-function instalarPWA() {
-  if (!deferredPrompt) {
-    alert('Para instalar en iOS: toca el bot\u00f3n Compartir \u2192 "A\u00f1adir a pantalla de inicio"');
+  var yaContactados = db.config.postventaEnviados || [];
+  var pendientes = Object.values(clientesMap).filter(function(c) {
+    return yaContactados.indexOf(c.nombre.toLowerCase()) < 0
+      && (!q || c.nombre.toLowerCase().indexOf(q) >= 0);
+  });
+  pendientes.sort(function(a, b) { return b.ultimaCompra.localeCompare(a.ultimaCompra); });
+  if (!pendientes.length) {
+    lista.innerHTML = '<div style="text-align:center;padding:40px;color:#a07040;">\uD83C\uDF89 \u00A1Todos los clientes han sido contactados!</div>';
     return;
   }
-  deferredPrompt.prompt();
-  deferredPrompt.userChoice.then(function(result) {
-    console.log('Instalaci\u00f3n:', result.outcome);
-    deferredPrompt = null;
-    document.getElementById('btn-instalar').style.display = 'none';
+  var html = '<p style="font-size:.85rem;color:#a07040;margin-bottom:12px;">' + pendientes.length + ' cliente(s) pendiente(s)</p>';
+  pendientes.forEach(function(c) {
+    var tpl = db.config.waMsgPostventa || 'Hola {nombre}, \u00BFc\u00f3mo te parecieron los Alfajores?';
+    var preview = tpl.replace(/\{nombre\}/g, c.nombre);
+    html += '<div class="client-card">'
+      + '<div class="client-header"><span class="client-name">' + c.nombre + '</span>'
+      + '<div class="client-actions">';
+    if (c.tel) {
+      html += '<button class="btn btn-wa btn-sm" onclick="enviarPostventa(this)" data-nombre="' + c.nombre.replace(/"/g, '&quot;') + '" data-tel="' + c.tel + '">&#x1F4AC; Enviar WA</button>';
+    } else {
+      html += '<span style="font-size:.8rem;color:#a07040;">Sin tel\u00e9fono</span>';
+    }
+    html += '<button class="btn btn-secondary btn-sm" onclick="marcarPVEnviado(this)" data-nombre="' + c.nombre.replace(/"/g, '&quot;') + '">\u2713 Ya enviado</button>'
+      + '</div></div>'
+      + '<div style="font-size:.83rem;color:#6b4226;">\u00DAltima compra: <strong>' + c.ultimaCompra + '</strong>'
+      + (c.tel ? '&nbsp;&nbsp;&#x1F4DE; ' + c.tel : '') + '</div>'
+      + '<div style="font-size:.82rem;color:#a07040;margin-top:6px;font-style:italic;">&ldquo;' + preview + '&rdquo;</div>'
+      + '</div>';
   });
+  lista.innerHTML = html;
 }
 
-/* ===== NOTIFICACIONES ===== */
-function pedirPermisoNotificaciones() {
-  if (!('Notification' in window)) return;
-  if (Notification.permission === 'default') {
-    Notification.requestPermission().then(function(perm) {
-      if (perm === 'granted') {
-        console.log('Notificaciones activadas');
-        programarRevisionDiaria();
-      }
-    });
-  } else if (Notification.permission === 'granted') {
-    programarRevisionDiaria();
+function enviarPostventa(btn) {
+  var nombre = btn.getAttribute('data-nombre');
+  var tel = btn.getAttribute('data-tel');
+  var tpl = db.config.waMsgPostventa || 'Hola {nombre}!';
+  var msg = tpl.replace(/\{nombre\}/g, nombre);
+  var telFmt = (db.config.waPrefijo || '57') + tel.replace(/\D/g, '');
+  window.open('https://wa.me/' + telFmt + '?text=' + encodeURIComponent(msg), '_blank');
+  marcarPVEnviadoNombre(nombre);
+}
+
+function marcarPVEnviado(btn) {
+  var nombre = btn.getAttribute('data-nombre');
+  marcarPVEnviadoNombre(nombre);
+}
+
+function marcarPVEnviadoNombre(nombre) {
+  if (!db.config.postventaEnviados) db.config.postventaEnviados = [];
+  var key = nombre.toLowerCase();
+  if (db.config.postventaEnviados.indexOf(key) < 0) {
+    db.config.postventaEnviados.push(key);
+    saveDB();
   }
+  renderPostventa();
 }
-
-function programarRevisionDiaria() {
-  // Revisar cobros ahora y cada hora
-  verificarCobrosNotif();
-  setInterval(verificarCobrosNotif, 60 * 60 * 1000);
-}
-
-function verificarCobrosNotif() {
-  if (Notification.permission !== 'granted') return;
-  var manana = new Date();
-  manana.setDate(manana.getDate() + 1);
-  var mananaStr = manana.toISOString().split('T')[0];
-  // Solo revisar una vez por día
-  var lastCheck = localStorage.getItem('aca_lastNotifCheck');
-  var hoy = new Date().toISOString().split('T')[0];
-  if (lastCheck === hoy) return;
-  localStorage.setItem('aca_lastNotifCheck', hoy);
-  var pendientes = db.deudores.filter(function(d) {
-    return d.estado === 'pendiente' && d.fechaCobro === mananaStr;
-  });
-  if (!pendientes.length) return;
-  pendientes.forEach(function(d) {
-    var mananaFmt = manana.toLocaleDateString('es-CO');
-    var msg = (db.config.waMsgCobro || 'Cobro pendiente: {nombre} - ${valor}')
-      .replace(/\{nombre\}/g, d.clienteNombre)
-      .replace(/\{fecha\}/g, mananaFmt)
-      .replace(/\{valor\}/g, fmt(d.valor));
-    new Notification('\u23F0 Cobro ma\u00f1ana \u2014 Alfajores con Amor', {
-      body: d.clienteNombre + ' \u2014 $' + fmt(d.valor),
-      icon: './icon-192.png',
-      tag: 'cobro-' + d.id
-    });
-  });
-}
-
-// Pedir permisos al hacer login (se llama desde loginAs)
-var _loginAsOrig = loginAs;
-loginAs = function(user) {
-  _loginAsOrig(user);
-  setTimeout(pedirPermisoNotificaciones, 2000);
-};
 
 /* ===================== BOOT ===================== */
 loadDB();
