@@ -501,6 +501,14 @@ function loginAs(user) {
   applyRoleUI(user.rol);
   initApp();
   checkAlertasCobro();
+  // Sincronizar datos desde Sheets en segundo plano
+  cargarDesdeSheets(function(ok) {
+    if (ok) {
+      renderProductosSelect();
+      renderResumenHoy();
+      renderUltimas();
+    }
+  });
 }
 
 function doLogout() {
@@ -1504,6 +1512,44 @@ loginAs = function(user) {
   _loginAsOrigPWA(user);
   setTimeout(pedirPermisoNotificaciones, 2000);
 };
+
+
+/* ===================== CARGAR DESDE SHEETS ===================== */
+function cargarDesdeSheets(cb) {
+  var url = db.config.gasUrl || '';
+  if (!url) { if(cb) cb(false); return; }
+  fetch(url + '?accion=getAll', { method:'GET', redirect:'follow' })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data.status !== 'ok') { if(cb) cb(false); return; }
+      if (data.recibos && data.recibos.length)    db.recibos    = data.recibos;
+      if (data.productos && data.productos.length) db.productos  = data.productos;
+      if (data.clientes && data.clientes.length)   db.clientes   = data.clientes;
+      if (data.deudores && data.deudores.length)   db.deudores   = data.deudores;
+      if (data.puntos)                             db.puntos     = data.puntos;
+      if (data.gastosFijos && data.gastosFijos.length) {
+        var gf = {};
+        data.gastosFijos.forEach(function(g) {
+          if (!gf[g.anio]) gf[g.anio] = [];
+          gf[g.anio].push({ concepto: g.concepto, valor: parseFloat(g.valor)||0 });
+        });
+        db.gastosFijos = gf;
+      }
+      if (data.config) {
+        Object.keys(data.config).forEach(function(k) {
+          if (k !== 'usuarios') db.config[k] = data.config[k];
+        });
+      }
+      if (data.usuarios && data.usuarios.length) {
+        db.config.usuarios = data.usuarios.map(function(u) {
+          return { id: String(u.id), nombre: String(u.nombre), username: String(u.username), password: String(u.password), rol: String(u.rol) };
+        });
+      }
+      saveDB();
+      if(cb) cb(true);
+    })
+    .catch(function(err) { console.warn('cargarDesdeSheets error:', err); if(cb) cb(false); });
+}
 
 /* ===================== BOOT ===================== */
 loadDB();
