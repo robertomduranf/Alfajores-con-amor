@@ -21,12 +21,12 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--te
 .btn-login:hover{background:var(--accent2);}
 #login-error{color:var(--red);font-size:.88rem;margin-top:10px;display:none;}
 #app{display:none;flex-direction:column;min-height:100vh;}
-header{background:var(--accent);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);}
+header{background:var(--accent);color:#fff;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-wrap:wrap;gap:6px;}
 header .logo-wrap{display:flex;align-items:center;gap:12px;}
 header img{height:48px;width:auto;}
 header h1{font-size:1.15rem;letter-spacing:.5px;}
 .header-right{display:flex;align-items:center;gap:12px;}
-.user-badge{background:rgba(255,255,255,.18);padding:5px 12px;border-radius:20px;font-size:.85rem;}
+.user-badge{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:.78rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .btn-logout{background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.85rem;}
 .btn-logout:hover{background:rgba(255,255,255,.35);}
 .tabs-bar{background:var(--bg2);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 10px;}
@@ -35,14 +35,23 @@ header h1{font-size:1.15rem;letter-spacing:.5px;}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
 .tab-btn:hover{color:var(--accent);background:rgba(130,73,19,.06);}
 .tab-badge{position:absolute;top:6px;right:4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;padding:1px 5px;font-weight:700;}
-.tab-content{padding:20px;flex:1;}
+.tab-content{padding:20px;flex:1;} @media(max-width:500px){.tab-content{padding:10px;}}
 .tab-pane{display:none;}.tab-pane.active{display:block;}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px;border:1px solid var(--border);}
 .card h3{color:var(--accent);margin-bottom:14px;font-size:1rem;}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
-@media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
+@media(max-width:700px){
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
+  .grid-2 .card[style*="grid-column:span 2"]{grid-column:span 1 !important;}
+  header h1{font-size:.95rem;}
+  .tab-content{padding:12px;}
+  .card{padding:14px;}
+  .user-badge{display:none;}
+  header{padding:8px 12px;}
+  .kpi .kpi-val{font-size:1.3rem;}
+}
 @media(min-width:700px) and (max-width:1000px){.grid-3,.grid-4{grid-template-columns:1fr 1fr;}}
 .form-group{margin-bottom:14px;}
 .form-group label{display:block;font-size:.83rem;color:var(--text2);margin-bottom:4px;font-weight:600;}
@@ -90,6 +99,15 @@ tr:hover td{background:rgba(130,73,19,.04);}
 .client-actions{display:flex;gap:6px;flex-wrap:wrap;}
 .flex-end{display:flex;justify-content:flex-end;gap:10px;}
 .mt-8{margin-top:8px;}.mb-0{margin-bottom:0;}.w100{width:100%;}
+
+@media(max-width:768px){
+  #admin-grid{grid-template-columns:1fr!important;}
+  #admin-grid .card[style]{grid-column:1!important;}
+  .tab-content{padding:10px;}
+  header h1{font-size:.95rem;}
+  .user-badge{font-size:.72rem;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tabs-bar .tab-btn{padding:10px 12px;font-size:.8rem;}
+}
 </style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#824913">
@@ -264,7 +282,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
 
     <!-- ADMIN -->
     <div class="tab-pane" id="tab-admin">
-      <div class="grid-2">
+      <div class="grid-2" id="admin-grid">
         <div class="card"><h3>&#x1F517; Conexi&oacute;n Google Sheets</h3>
           <div class="form-group"><label>URL del Apps Script</label><input type="text" id="cfg-gasurl" placeholder="https://script.google.com/..."></div>
           <button class="btn btn-primary" onclick="guardarGasUrl()">Guardar URL</button>
