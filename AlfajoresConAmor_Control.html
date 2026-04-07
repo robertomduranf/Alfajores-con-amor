@@ -136,7 +136,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
   <header>
     <div class="logo-wrap">
       <img src="./logo-header.png" alt="Logo">
-      <h1>Medellín</h1>
+      <h1>Alfajores con Amor</h1>
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
@@ -414,7 +414,7 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbx2h26FJAk5PcNlfV1uvRJybMYDGKG5uRKRqHATvxWliqP0Zgaypf5NM-MY7mV4mCla/exec',
+    gasUrl: 'https://script.google.com/macros/s/AKfycbwfQGliwf6eszpCurXkVkeLYKAjOWYNAO2VIOmvWsmu2kVBqNmQcYtxiqn225qIUEY1/exec',
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
@@ -1553,6 +1553,8 @@ function cargarDesdeSheets(cb) {
 
 /* ===================== BOOT ===================== */
 loadDB();
+// Siempre usar la URL embedada en el HTML como respaldo
+if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbwfQGliwf6eszpCurXkVkeLYKAjOWYNAO2VIOmvWsmu2kVBqNmQcYtxiqn225qIUEY1/exec';
 // Restaurar sesion si existe
 (function() {
   try {
