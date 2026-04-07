@@ -136,7 +136,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
   <header>
     <div class="logo-wrap">
       <img src="./logo-header.png" alt="Logo">
-      <h1></h1>
+      <h1>Medellín</h1>
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
@@ -1347,13 +1347,11 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 function sincronizar(accion,payload,cb) {
   var url=db.config.gasUrl||'';
   if(!url){if(cb)cb(false);return;}
-  // Usar fetch con no-cors via form encoded para evitar bloqueo CORS
-  var body = 'payload='+encodeURIComponent(JSON.stringify({accion:accion,data:payload}));
   fetch(url,{
     method:'POST',
     mode:'no-cors',
-    headers:{'Content-Type':'application/x-www-form-urlencoded'},
-    body:body
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({accion:accion,data:payload})
   })
   .then(function(){if(cb)cb(true);})
   .catch(function(){if(cb)cb(false);});
