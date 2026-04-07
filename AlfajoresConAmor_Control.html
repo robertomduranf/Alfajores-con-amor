@@ -91,6 +91,12 @@ tr:hover td{background:rgba(130,73,19,.04);}
 .flex-end{display:flex;justify-content:flex-end;gap:10px;}
 .mt-8{margin-top:8px;}.mb-0{margin-bottom:0;}.w100{width:100%;}
 </style>
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#824913">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="AlfajoresControl">
+<link rel="apple-touch-icon" href="./icon-192.png">
 </head>
 <body>
 
@@ -116,6 +122,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
+      <button id="btn-instalar" class="btn-logout" style="display:none;background:rgba(255,255,255,.35);" onclick="instalarPWA()">&#x1F4F2; Instalar App</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
   </header>
@@ -1410,6 +1417,77 @@ function marcarPVEnviadoNombre(nombre) {
   }
   renderPostventa();
 }
+
+
+/* ===================== PWA ===================== */
+var deferredPrompt = null;
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', function() {
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+      console.log('SW OK:', reg.scope);
+    }).catch(function(err) { console.warn('SW error:', err); });
+  });
+}
+
+window.addEventListener('beforeinstallprompt', function(e) {
+  e.preventDefault();
+  deferredPrompt = e;
+  var btn = document.getElementById('btn-instalar');
+  if (btn) btn.style.display = '';
+});
+
+window.addEventListener('appinstalled', function() {
+  deferredPrompt = null;
+  var btn = document.getElementById('btn-instalar');
+  if (btn) btn.style.display = 'none';
+});
+
+function instalarPWA() {
+  if (!deferredPrompt) {
+    alert('Para instalar en iOS: toca Compartir \u2192 A\u00f1adir a pantalla de inicio');
+    return;
+  }
+  deferredPrompt.prompt();
+  deferredPrompt.userChoice.then(function(r) {
+    deferredPrompt = null;
+    document.getElementById('btn-instalar').style.display = 'none';
+  });
+}
+
+function pedirPermisoNotificaciones() {
+  if (!('Notification' in window)) return;
+  if (Notification.permission === 'default') {
+    Notification.requestPermission().then(function(p) {
+      if (p === 'granted') verificarCobrosNotif();
+    });
+  } else if (Notification.permission === 'granted') {
+    verificarCobrosNotif();
+    setInterval(verificarCobrosNotif, 60*60*1000);
+  }
+}
+
+function verificarCobrosNotif() {
+  if (Notification.permission !== 'granted') return;
+  var manana = new Date(); manana.setDate(manana.getDate()+1);
+  var mananaStr = manana.toISOString().split('T')[0];
+  var hoy = new Date().toISOString().split('T')[0];
+  if (localStorage.getItem('aca_lastNotifCheck') === hoy) return;
+  localStorage.setItem('aca_lastNotifCheck', hoy);
+  var pendientes = db.deudores.filter(function(d){ return d.estado==='pendiente'&&d.fechaCobro===mananaStr; });
+  pendientes.forEach(function(d){
+    new Notification('\u23F0 Cobro ma\u00f1ana \u2014 Alfajores con Amor', {
+      body: d.clienteNombre + ' \u2014 $' + fmt(d.valor),
+      icon: './icon-192.png', tag: 'cobro-'+d.id
+    });
+  });
+}
+
+var _loginAsOrigPWA = loginAs;
+loginAs = function(user) {
+  _loginAsOrigPWA(user);
+  setTimeout(pedirPermisoNotificaciones, 2000);
+};
 
 /* ===================== BOOT ===================== */
 loadDB();
