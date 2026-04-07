@@ -136,7 +136,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
   <header>
     <div class="logo-wrap">
       <img src="./logo-header.png" alt="Logo">
-      <h1>Alfajores con Amor</h1>
+      <h1>Medellín</h1>
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
@@ -645,7 +645,7 @@ function onProductoChange() {
   if(!id) return;
   var p=null;
   for(var i=0;i<db.productos.length;i++){if(db.productos[i].id===id){p=db.productos[i];break;}}
-  if(p){document.getElementById('ne-descripcion').value=p.nombre;document.getElementById('ne-valor').value=p.precio;calcTotal();}
+  if(p){document.getElementById('ne-descripcion').value=p.nombre;document.getElementById('ne-valor').value=parseFloat(p.precio)||0;calcTotal();}
 }
 
 function calcTotal() {
@@ -1523,7 +1523,9 @@ function cargarDesdeSheets(cb) {
     .then(function(data) {
       if (data.status !== 'ok') { if(cb) cb(false); return; }
       if (data.recibos && data.recibos.length)    db.recibos    = data.recibos;
-      if (data.productos && data.productos.length) db.productos  = data.productos;
+      if (data.productos && data.productos.length) db.productos = data.productos.map(function(p){
+        return { id:String(p.id), nombre:String(p.nombre), precio:parseFloat(p.precio)||0, costo:parseFloat(p.costo)||0, categoria:String(p.categoria||''), descripcion:String(p.descripcion||'') };
+      });
       if (data.clientes && data.clientes.length)   db.clientes   = data.clientes;
       if (data.deudores && data.deudores.length)   db.deudores   = data.deudores;
       if (data.puntos)                             db.puntos     = data.puntos;
