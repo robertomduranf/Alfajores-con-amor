@@ -132,11 +132,18 @@ tr:hover td{background:rgba(130,73,19,.04);}
   </div>
 </div>
 
+<div id="loading-screen" style="display:none;position:fixed;inset:0;background:#fceed6;z-index:2000;flex-direction:column;align-items:center;justify-content:center;">
+  <img src="./logo.png" style="width:120px;margin-bottom:20px;opacity:.9;">
+  <div style="color:#824913;font-size:1rem;font-weight:600;margin-bottom:16px;">Cargando datos...</div>
+  <div style="width:48px;height:48px;border:4px solid #e8d5ae;border-top-color:#824913;border-radius:50%;animation:spin 1s linear infinite;"></div>
+  <style>@keyframes spin{to{transform:rotate(360deg);}}</style>
+</div>
+
 <div id="app">
   <header>
     <div class="logo-wrap">
       <img src="./logo-header.png" alt="Logo">
-      <h1>Medellín</h1>
+      <h1 id="header-ciudad">Medellín</h1>
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
@@ -495,19 +502,18 @@ document.getElementById('li-user').addEventListener('keydown',function(e){if(e.k
 function loginAs(user) {
   db.currentUser=user;
   localStorage.setItem('aca_session', JSON.stringify(user));
+  // Mostrar pantalla de carga
   document.getElementById('login-screen').style.display='none';
-  document.getElementById('app').style.display='flex';
-  document.getElementById('user-badge').textContent=user.nombre+' | '+user.rol;
-  applyRoleUI(user.rol);
-  initApp();
-  checkAlertasCobro();
-  // Sincronizar datos desde Sheets en segundo plano
+  document.getElementById('loading-screen').style.display='flex';
+  // Cargar datos desde Sheets antes de mostrar la app
   cargarDesdeSheets(function(ok) {
-    if (ok) {
-      renderProductosSelect();
-      renderResumenHoy();
-      renderUltimas();
-    }
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    document.getElementById('user-badge').textContent=user.nombre+' | '+user.rol;
+    applyRoleUI(user.rol);
+    initApp();
+    checkAlertasCobro();
+    if (!ok) console.warn('No se pudo cargar desde Sheets, usando datos locales');
   });
 }
 
@@ -680,7 +686,8 @@ function buscarClienteSugerencia(q) {
 /* ===================== GUARDAR RECIBO ===================== */
 function guardarRecibo() {
   var tipo=document.getElementById('ne-tipo').value;
-  var fecha=document.getElementById('ne-fecha').value;
+  var fechaRaw=document.getElementById('ne-fecha').value;
+  var fecha = fechaRaw ? fechaRaw.split('T')[0] : new Date().toISOString().split('T')[0];
   var desc=document.getElementById('ne-descripcion').value.trim();
   var valor=parseFloat(document.getElementById('ne-valor').value)||0;
   var cant=parseFloat(document.getElementById('ne-cantidad').value)||1;
@@ -1528,7 +1535,21 @@ function cargarDesdeSheets(cb) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.status !== 'ok') { if(cb) cb(false); return; }
-      if (data.recibos && data.recibos.length)    db.recibos    = data.recibos;
+      if (data.recibos && data.recibos.length) db.recibos = data.recibos.map(function(r) {
+        // Fix fecha: Sheets may return Date object or timestamp string
+        var fecha = r.fecha;
+        if (fecha && String(fecha).indexOf('T') >= 0) fecha = String(fecha).split('T')[0];
+        if (fecha instanceof Date) fecha = fecha.toISOString().split('T')[0];
+        return {
+          id: String(r.id), tipo: String(r.tipo||''), fecha: String(fecha||''),
+          descripcion: String(r.descripcion||''), cantidad: parseFloat(r.cantidad)||1,
+          valor: parseFloat(r.valor)||0, total: parseFloat(r.total)||0,
+          cliente: String(r.cliente||''), tel: String(r.tel||''),
+          responsable: String(r.responsable||''), recibo: String(r.recibo||''),
+          notas: String(r.notas||''), pago: String(r.pago||'contado'),
+          fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0
+        };
+      });
       if (data.productos && data.productos.length) db.productos = data.productos.map(function(p){
         return { id:String(p.id), nombre:String(p.nombre), precio:parseFloat(p.precio)||0, costo:parseFloat(p.costo)||0, categoria:String(p.categoria||''), descripcion:String(p.descripcion||'') };
       });
