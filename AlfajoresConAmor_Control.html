@@ -421,7 +421,7 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbyLzWi-1ujYcJ6JoWL9hWrbX0krkgSTRUACGI28Vyx0NT5sOnw2JkEzG60OJ34YVseV/exec',
+    gasUrl: 'https://script.google.com/macros/s/AKfycbzYllsW8E1ExdGReWlcvPA9rtN9clak320OxuCB-HtkIxFFB_qrHF8X3PN4slRrJTea/exec',
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
@@ -1371,7 +1371,33 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 function sincronizar(accion,payload,cb) {
   var url=db.config.gasUrl||'';
   if(!url){if(cb)cb(false);return;}
-  var params='?accion='+encodeURIComponent(accion)+'&data='+encodeURIComponent(JSON.stringify(payload));
+  // Usar GET con datos comprimidos - solo campos esenciales
+  var dataStr = JSON.stringify(payload);
+  var params = '?accion='+encodeURIComponent(accion)+'&data='+encodeURIComponent(dataStr);
+  // Si URL es muy larga (>2000 chars) usar iframe trick para no-cors POST
+  if((url+params).length > 2000) {
+    var form = document.createElement('form');
+    form.method = 'POST';
+    form.action = url;
+    form.target = 'gas_iframe_'+Date.now();
+    var ifrm = document.createElement('iframe');
+    ifrm.name = form.target;
+    ifrm.style.display = 'none';
+    document.body.appendChild(ifrm);
+    var inp1 = document.createElement('input');
+    inp1.type='hidden'; inp1.name='accion'; inp1.value=accion;
+    var inp2 = document.createElement('input');
+    inp2.type='hidden'; inp2.name='data'; inp2.value=dataStr;
+    form.appendChild(inp1); form.appendChild(inp2);
+    document.body.appendChild(form);
+    form.submit();
+    setTimeout(function(){ 
+      document.body.removeChild(form); 
+      document.body.removeChild(ifrm);
+      if(cb) cb(true);
+    }, 2000);
+    return;
+  }
   fetch(url+params,{method:'GET',redirect:'follow'})
   .then(function(r){return r.json();})
   .then(function(d){if(cb)cb(d.status==='ok');})
@@ -1595,7 +1621,7 @@ function fechaHoy() {
 /* ===================== BOOT ===================== */
 loadDB();
 // Siempre usar la URL embedada en el HTML como respaldo
-if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbyLzWi-1ujYcJ6JoWL9hWrbX0krkgSTRUACGI28Vyx0NT5sOnw2JkEzG60OJ34YVseV/exec';
+if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbzYllsW8E1ExdGReWlcvPA9rtN9clak320OxuCB-HtkIxFFB_qrHF8X3PN4slRrJTea/exec';
 // Restaurar sesion si existe
 (function() {
   try {
