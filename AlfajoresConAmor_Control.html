@@ -586,7 +586,7 @@ function switchTab(btn) {
 
 /* ===================== INIT ===================== */
 function initApp() {
-  var today=new Date().toISOString().split('T')[0];
+  var today=fechaHoy();
   document.getElementById('ne-fecha').value=today;
   document.getElementById('ne-responsable').value=db.currentUser.nombre;
   actualizarConsecutivo();
@@ -687,7 +687,7 @@ function buscarClienteSugerencia(q) {
 function guardarRecibo() {
   var tipo=document.getElementById('ne-tipo').value;
   var fechaRaw=document.getElementById('ne-fecha').value;
-  var fecha = fechaRaw ? fechaRaw.split('T')[0] : new Date().toISOString().split('T')[0];
+  var fecha = fechaRaw ? fechaRaw.split('T')[0] : fechaHoy();
   var desc=document.getElementById('ne-descripcion').value.trim();
   var valor=parseFloat(document.getElementById('ne-valor').value)||0;
   var cant=parseFloat(document.getElementById('ne-cantidad').value)||1;
@@ -774,7 +774,7 @@ function sumarPuntos(clienteNombre, pts, motivo) {
   var key=clienteNombre.toLowerCase();
   if(!db.puntos[key]) db.puntos[key]={nombre:clienteNombre,total:0,historial:[]};
   db.puntos[key].total+=pts;
-  db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:new Date().toISOString().split('T')[0]});
+  db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:fechaHoy()});
   saveDB();
 }
 
@@ -811,7 +811,7 @@ function agregarReferido(clienteNombre) {
 
 /* ===================== RESUMEN HOY ===================== */
 function renderResumenHoy() {
-  var hoy=new Date().toISOString().split('T')[0];
+  var hoy=fechaHoy();
   var hoyRec=db.recibos.filter(function(r){return r.fecha===hoy;});
   var ventas=hoyRec.filter(function(r){return r.tipo==='Venta';}).reduce(function(a,r){return a+r.total;},0);
   var gastos=hoyRec.filter(function(r){return r.tipo==='Gasto';}).reduce(function(a,r){return a+r.total;},0);
@@ -882,7 +882,7 @@ function renderDeudores() {
     lista.innerHTML='<div style="text-align:center;padding:40px;color:#a07040;">\uD83C\uDF89 No hay deudas pendientes</div>';
     return;
   }
-  var hoy=new Date().toISOString().split('T')[0];
+  var hoy=fechaHoy();
   var manana=new Date(); manana.setDate(manana.getDate()+1);
   var mananaStr=manana.toISOString().split('T')[0];
   var total=pendientes.reduce(function(a,d){return a+d.valor;},0);
@@ -916,7 +916,7 @@ function pagarDeuda(id) {
       // Registrar pago automático
       var d=db.deudores[i];
       var rec={
-        id:Date.now().toString(),tipo:'Pago Deuda',fecha:new Date().toISOString().split('T')[0],
+        id:Date.now().toString(),tipo:'Pago Deuda',fecha:fechaHoy(),
         descripcion:'Pago deuda de '+d.clienteNombre,cantidad:1,valor:d.valor,total:d.valor,
         cliente:d.clienteNombre,tel:d.tel,responsable:db.currentUser.nombre,
         recibo:'P'+String(db.config.consec2).padStart(5,'0'),notas:'',pago:'contado',fechaCobro:'',ts:Date.now()
@@ -1508,7 +1508,7 @@ function verificarCobrosNotif() {
   if (Notification.permission !== 'granted') return;
   var manana = new Date(); manana.setDate(manana.getDate()+1);
   var mananaStr = manana.toISOString().split('T')[0];
-  var hoy = new Date().toISOString().split('T')[0];
+  var hoy = fechaHoy();
   if (localStorage.getItem('aca_lastNotifCheck') === hoy) return;
   localStorage.setItem('aca_lastNotifCheck', hoy);
   var pendientes = db.deudores.filter(function(d){ return d.estado==='pendiente'&&d.fechaCobro===mananaStr; });
@@ -1578,6 +1578,15 @@ function cargarDesdeSheets(cb) {
       if(cb) cb(true);
     })
     .catch(function(err) { console.warn('cargarDesdeSheets error:', err); if(cb) cb(false); });
+}
+
+
+function fechaHoy() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth()+1).padStart(2,'0');
+  var day = String(d.getDate()).padStart(2,'0');
+  return y+'-'+m+'-'+day;
 }
 
 /* ===================== BOOT ===================== */
