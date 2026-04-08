@@ -771,9 +771,11 @@ function limpiarNE() {
 
 /* ===================== PUNTOS ===================== */
 function sumarPuntos(clienteNombre, pts, motivo) {
+  if(!clienteNombre || pts<=0) return;
   var key=clienteNombre.toLowerCase();
+  if(!db.puntos) db.puntos={};
   if(!db.puntos[key]) db.puntos[key]={nombre:clienteNombre,total:0,historial:[]};
-  db.puntos[key].total+=pts;
+  db.puntos[key].total += pts;
   db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:fechaHoy()});
   saveDB();
   sincronizar('savePuntos', db.puntos);
@@ -1566,8 +1568,11 @@ function cargarDesdeSheets(cb) {
         db.gastosFijos = gf;
       }
       if (data.config) {
+        var numKeys = ['ptosPorMil','ptosReferido','ptosUmbral','descuentoPct','bonoDias','consec1','consec2'];
         Object.keys(data.config).forEach(function(k) {
-          if (k !== 'usuarios') db.config[k] = data.config[k];
+          if (k === 'usuarios') return;
+          if (numKeys.indexOf(k) >= 0) db.config[k] = parseFloat(data.config[k])||0;
+          else db.config[k] = data.config[k];
         });
       }
       if (data.usuarios && data.usuarios.length) {
