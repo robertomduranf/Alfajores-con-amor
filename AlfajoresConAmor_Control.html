@@ -776,6 +776,7 @@ function sumarPuntos(clienteNombre, pts, motivo) {
   db.puntos[key].total+=pts;
   db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:fechaHoy()});
   saveDB();
+  sincronizar('savePuntos', db.puntos);
 }
 
 function getPuntos(clienteNombre) {
