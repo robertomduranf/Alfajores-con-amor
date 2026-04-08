@@ -3,7 +3,7 @@
 //  Maneja caché offline + notificaciones de cobro
 // ============================================================
 
-var CACHE_NAME = 'aca-v23';
+var CACHE_NAME = 'aca-v24';
 var ASSETS = [
   './',
   './AlfajoresConAmor_Control.html',
@@ -17,7 +17,13 @@ var ASSETS = [
 self.addEventListener('install', function(e) {
   e.waitUntil(
     caches.open(CACHE_NAME).then(function(cache) {
-      return cache.addAll(ASSETS);
+      // Solo cachear assets locales uno a uno para evitar fallos
+      var promises = ASSETS.map(function(url) {
+        return cache.add(url).catch(function(err) {
+          console.warn('Cache skip:', url, err);
+        });
+      });
+      return Promise.all(promises);
     }).then(function() {
       return self.skipWaiting();
     })
@@ -40,22 +46,23 @@ self.addEventListener('activate', function(e) {
 
 // ===== FETCH: servir desde caché, actualizar en background =====
 self.addEventListener('fetch', function(e) {
-  // Solo cachear requests GET del mismo origen
   if (e.request.method !== 'GET') return;
-  
+  // No cachear URLs externas (Google, CDN, etc.)
+  var url = e.request.url;
+  if (url.indexOf('script.google.com') >= 0 ||
+      url.indexOf('googleapis.com') >= 0 ||
+      url.indexOf('cdn.jsdelivr.net') >= 0 ||
+      url.indexOf('cdnjs.cloudflare.com') >= 0) return;
+
   e.respondWith(
     caches.open(CACHE_NAME).then(function(cache) {
       return cache.match(e.request).then(function(cached) {
-        // Fetch en background para actualizar caché
         var fetchPromise = fetch(e.request).then(function(response) {
           if (response && response.status === 200) {
             cache.put(e.request, response.clone());
           }
           return response;
-        }).catch(function() {
-          return cached;
-        });
-        // Devolver caché inmediatamente si existe, si no esperar fetch
+        }).catch(function() { return cached; });
         return cached || fetchPromise;
       });
     })
