@@ -421,7 +421,7 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbyD0PKxwoq_-auiSHYXT14aSKyRXQkC6f7DDXgVUqB6myZRpr_eBDXyCkSzDpafRuv9JA/exec',
+    gasUrl: 'https://script.google.com/macros/s/AKfycbx2uRcabhnwMVdJUP_bj8iOrVS8F3tE9cMrSIh1tXywsUcCE19HaNTOuiRAnxGdug6wMQ/exec',
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
@@ -1636,7 +1636,7 @@ function fechaHoy() {
 /* ===================== BOOT ===================== */
 loadDB();
 // Siempre usar la URL embedada en el HTML como respaldo
-if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbyD0PKxwoq_-auiSHYXT14aSKyRXQkC6f7DDXgVUqB6myZRpr_eBDXyCkSzDpafRuv9JA/exec';
+if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbx2uRcabhnwMVdJUP_bj8iOrVS8F3tE9cMrSIh1tXywsUcCE19HaNTOuiRAnxGdug6wMQ/exec';
 // Restaurar sesion si existe
 (function() {
   try {
