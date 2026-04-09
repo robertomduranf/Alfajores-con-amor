@@ -778,7 +778,13 @@ function sumarPuntos(clienteNombre, pts, motivo) {
   db.puntos[key].total += pts;
   db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:fechaHoy()});
   saveDB();
-  sincronizar('savePuntos', db.puntos);
+  // Enviar version simplificada para evitar URL demasiado larga
+  var puntosSimple = [];
+  Object.keys(db.puntos).forEach(function(k) {
+    var p = db.puntos[k];
+    puntosSimple.push({clienteKey:k, nombre:p.nombre, total:p.total, historial:p.historial});
+  });
+  sincronizar('savePuntos', puntosSimple);
 }
 
 function getPuntos(clienteNombre) {
