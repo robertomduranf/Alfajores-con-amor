@@ -1609,6 +1609,7 @@ function cargarDesdeSheets(cb) {
         var numKeys = ['ptosPorMil','ptosReferido','ptosUmbral','descuentoPct','bonoDias','consec1','consec2'];
         Object.keys(data.config).forEach(function(k) {
           if (k === 'usuarios') return;
+          if (k === 'gasUrl') return; // NUNCA sobrescribir la URL embebida
           if (numKeys.indexOf(k) >= 0) db.config[k] = parseFloat(data.config[k])||0;
           else db.config[k] = data.config[k];
         });
