@@ -196,7 +196,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group" id="ne-tel-group"><label>Tel&eacute;fono <small>(auto-registra cliente nuevo)</small></label><input type="text" id="ne-tel" placeholder="Ej: 3001234567"></div>
           <div class="form-group"><label>Responsable</label><input type="text" id="ne-responsable" readonly></div>
           <div class="form-group"><label>Notas (opcional)</label><textarea id="ne-notas" placeholder="Notas adicionales"></textarea></div>
-          <div class="flex-end"><button class="btn btn-secondary" onclick="limpiarNE()">Limpiar</button><button class="btn btn-primary" onclick="guardarRecibo()">Guardar &#x2713;</button></div>
+          <div class="flex-end"><button class="btn btn-secondary" onclick="limpiarNE()">Limpiar</button><button class="btn btn-primary" id="btn-guardar" onclick="guardarRecibo()">Guardar &#x2713;</button></div>
         </div>
         <div>
           <div class="card"><h3>&#x1F4CA; Resumen Hoy</h3><div class="grid-2"><div class="kpi"><div class="kpi-val" id="hoy-ventas">$0</div><div class="kpi-lbl">Ventas Hoy</div></div><div class="kpi"><div class="kpi-val" id="hoy-gastos">$0</div><div class="kpi-lbl">Gastos Hoy</div></div><div class="kpi"><div class="kpi-val" id="hoy-transac">0</div><div class="kpi-lbl">Transacciones</div></div><div class="kpi"><div class="kpi-val" id="hoy-neto" style="color:#2d7a3a;">$0</div><div class="kpi-lbl">Neto</div></div></div></div>
@@ -652,6 +652,8 @@ function buscarClienteSugerencia(q) {
 // Consecutivo asignado por Apps Script en saveReceipt
 
 function guardarRecibo() {
+  var btnG=document.getElementById('btn-guardar');
+  if(btnG){if(btnG.disabled)return;btnG.disabled=true;btnG.textContent='Guardando...';}
   var tipo=document.getElementById('ne-tipo').value;
   var fechaRaw=document.getElementById('ne-fecha').value;
   var fecha=fechaRaw?fechaRaw.split('T')[0]:fechaHoy();
@@ -691,14 +693,20 @@ function guardarRecibo() {
           if(pago==='credito') sincronizar('saveDeudor',db.deudores);
         }
         renderResumenHoy(); renderUltimas();
+        if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}
         if(tipo==='Venta'&&tel&&pago==='contado') {
       var ptsG = Math.floor(total/1000)*(db.config.ptosPorMil||1);
       var ptsT = getPuntos(cliente);
       mostrarWaModal(cliente||'Cliente', tel, desc, total, ptsG, ptsT);
     }
-      }).catch(function(){rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();});
+      }).catch(function(){
+        rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();
+        renderResumenHoy();renderUltimas();
+        if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}
+      });
   } else {
     rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();
+    if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}
   }
   limpiarNE();
 }
