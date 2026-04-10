@@ -581,9 +581,28 @@ function guardarRecibo() {
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
         if(tipo==='Venta'&&tel&&pago==='contado'){
-          var ptsG=Math.floor(total/1000)*(db.config.ptosPorMil||1);
-          var ptsT=getPuntos(cliente);
-          mostrarWaModal(cliente||'Cliente',tel,desc,total,ptsG,ptsT);
+          if(canjeAplicado && canjeData.nombre) {
+            // Mensaje de canje
+            var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
+              .replace(/\{nombre\}/g, canjeData.nombre)
+              .replace(/\{descuento\}/g, canjeData.pct)
+              .replace(/\{totalAntes\}/g, fmt(canjeData.totalAntes))
+              .replace(/\{totalDespues\}/g, fmt(canjeData.totalDespues))
+              .replace(/\{ptsCanjeados\}/g, canjeData.ptsCanjeados)
+              .replace(/\{ptsTotales\}/g, canjeData.ptsTotales);
+            var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
+            document.getElementById('wa-nombre-display').textContent=canjeData.nombre;
+            document.getElementById('wa-preview-msg').textContent=msgCanje;
+            waCurrentTel=tel; waCurrentNombre=canjeData.nombre;
+            waCurrentProducto=''; waCurrentTotal=0; waCurrentPtsG=0; waCurrentPtsT=0;
+            // Override abrirWhatsApp for this modal open
+            window._tempWaMsg=msgCanje; window._tempWaTel=telCanje;
+            document.getElementById('modal-wa').classList.add('open');
+          } else {
+            var ptsG=Math.floor(total/1000)*(db.config.ptosPorMil||1);
+            var ptsT=getPuntos(cliente);
+            mostrarWaModal(cliente||'Cliente',tel,desc,total,ptsG,ptsT);
+          }
         }
       }).catch(function(){
         rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();
@@ -609,6 +628,7 @@ function limpiarNE() {
   document.getElementById('ne-pago').value='contado';
   document.getElementById('ne-fechacobro').value='';
   var pinfo=document.getElementById('ne-puntos-info');if(pinfo)pinfo.style.display='none';
+  canjeAplicado=false;canjeData={};
   onPagoChange();
   actualizarConsecutivo();
 }
@@ -1551,23 +1571,17 @@ function canjearDescuento() {
   sincronizar('savePuntos',arr);
   var ptsTotalesActual=db.puntos[key]?db.puntos[key].total:0;
   mostrarPuntosCliente(nombre);
-  var c2=null;
-  for(var ci=0;ci<db.clientes.length;ci++){if(db.clientes[ci].nombre.toLowerCase()===key){c2=db.clientes[ci];break;}}
-  if(c2&&c2.tel){
-    var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
-      .replace(/\{nombre\}/g,nombre)
-      .replace(/\{descuento\}/g,pct)
-      .replace(/\{totalAntes\}/g,fmt(val))
-      .replace(/\{totalDespues\}/g,fmt(valDesc))
-      .replace(/\{ptsCanjeados\}/g,umbral)
-      .replace(/\{ptsTotales\}/g,ptsTotalesActual);
-    var tel=(db.config.waPrefijo||'57')+c2.tel.replace(/\D/g,'');
-    if(confirm('\u2713 Descuento del '+pct+'% aplicado!\n\n\u00BFEnviar mensaje de canje por WhatsApp a '+nombre+'?')){
-      window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msgCanje),'_blank');
-    }
-  } else {
-    alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces.');
-  }
+  // Guardar datos del canje para usar al momento de guardar la venta
+  canjeAplicado = true;
+  canjeData = {
+    nombre: nombre,
+    pct: pct,
+    totalAntes: val,
+    totalDespues: valDesc,
+    ptsCanjeados: umbral,
+    ptsTotales: ptsTotalesActual
+  };
+  alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces.\nEl mensaje de canje se enviar\u00E1 al guardar la venta.');
 }
 
 function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales) {
@@ -1580,6 +1594,7 @@ function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales) {
 }
 
 var waCurrentProducto='',waCurrentTotal=0,waCurrentPtsG=0,waCurrentPtsT=0;
+var canjeAplicado=false,canjeData={};
 function mostrarWaModal(nombre,tel,producto,total,ptsG,ptsT) {
   waCurrentTel=tel;waCurrentNombre=nombre;
   waCurrentProducto=producto||'';waCurrentTotal=total||0;
@@ -1590,9 +1605,15 @@ function mostrarWaModal(nombre,tel,producto,total,ptsG,ptsT) {
 }
 
 function abrirWhatsApp() {
-  var tel=(db.config.waPrefijo||'57')+waCurrentTel.replace(/\D/g,'');
-  var msg=encodeURIComponent(buildWaMsg(waCurrentNombre,waCurrentProducto,waCurrentTotal,waCurrentPtsG,waCurrentPtsT));
-  window.open('https://wa.me/'+tel+'?text='+msg,'_blank');
+  if(window._tempWaMsg && window._tempWaTel) {
+    window.open('https://wa.me/'+window._tempWaTel+'?text='+encodeURIComponent(window._tempWaMsg),'_blank');
+    window._tempWaMsg=null; window._tempWaTel=null;
+  } else {
+    var tel=(db.config.waPrefijo||'57')+waCurrentTel.replace(/\D/g,'');
+    var msg=encodeURIComponent(buildWaMsg(waCurrentNombre,waCurrentProducto,waCurrentTotal,waCurrentPtsG,waCurrentPtsT));
+    window.open('https://wa.me/'+tel+'?text='+msg,'_blank');
+  }
+  canjeAplicado=false; canjeData={};
   cerrarModal('modal-wa');
 }
 
