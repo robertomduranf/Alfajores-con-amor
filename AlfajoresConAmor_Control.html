@@ -691,7 +691,11 @@ function guardarRecibo() {
           if(pago==='credito') sincronizar('saveDeudor',db.deudores);
         }
         renderResumenHoy(); renderUltimas();
-        if(tipo==='Venta'&&tel&&pago==='contado') mostrarWaModal(cliente||'Cliente',tel);
+        if(tipo==='Venta'&&tel&&pago==='contado') {
+      var ptsG = Math.floor(total/1000)*(db.config.ptosPorMil||1);
+      var ptsT = getPuntos(cliente);
+      mostrarWaModal(cliente||'Cliente', tel, desc, total, ptsG, ptsT);
+    }
       }).catch(function(){rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();});
   } else {
     rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();
@@ -1000,8 +1004,13 @@ function waDirecto(clienteId) {
   window.open('https://wa.me/'+tel+'?text='+msg,'_blank');
 }
 
-function buildWaMsg(nombre) {
-  return (db.config.waMsgTemplate||'Hola {nombre}!').replace(/\{nombre\}/g,nombre||'');
+function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales) {
+  return (db.config.waMsgTemplate||'Hola {nombre}!')
+    .replace(/\{nombre\}/g, nombre||'')
+    .replace(/\{producto\}/g, producto||'')
+    .replace(/\{total\}/g, total ? fmt(total) : '')
+    .replace(/\{ptsGanados\}/g, ptsGanados||'0')
+    .replace(/\{ptsTotales\}/g, ptsTotales||'0');
 }
 
 /* ===================== CLIENTE CRUD ===================== */
@@ -1298,17 +1307,19 @@ function guardarGastosFijos() {
 }
 
 /* ===================== WHATSAPP ===================== */
-function mostrarWaModal(nombre,tel) {
-  waCurrentTel=tel;
-  waCurrentNombre=nombre;
+var waCurrentProducto='', waCurrentTotal=0, waCurrentPtsG=0, waCurrentPtsT=0;
+function mostrarWaModal(nombre,tel,producto,total,ptsG,ptsT) {
+  waCurrentTel=tel; waCurrentNombre=nombre;
+  waCurrentProducto=producto||''; waCurrentTotal=total||0;
+  waCurrentPtsG=ptsG||0; waCurrentPtsT=ptsT||0;
   document.getElementById('wa-nombre-display').textContent=nombre;
-  document.getElementById('wa-preview-msg').textContent=buildWaMsg(nombre);
+  document.getElementById('wa-preview-msg').textContent=buildWaMsg(nombre,producto,total,ptsG,ptsT);
   document.getElementById('modal-wa').classList.add('open');
 }
 
 function abrirWhatsApp() {
   var tel=(db.config.waPrefijo||'57')+waCurrentTel.replace(/\D/g,'');
-  var msg=encodeURIComponent(buildWaMsg(waCurrentNombre));
+  var msg=encodeURIComponent(buildWaMsg(waCurrentNombre,waCurrentProducto,waCurrentTotal,waCurrentPtsG,waCurrentPtsT));
   window.open('https://wa.me/'+tel+'?text='+msg,'_blank');
   cerrarModal('modal-wa');
 }
