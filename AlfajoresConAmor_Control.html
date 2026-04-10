@@ -589,7 +589,8 @@ function guardarRecibo() {
               .replace(/\{totalAntes\}/g, fmt(canjeData.totalAntes))
               .replace(/\{totalDespues\}/g, fmt(canjeData.totalDespues))
               .replace(/\{ptsCanjeados\}/g, canjeData.ptsCanjeados)
-              .replace(/\{ptsTotales\}/g, canjeData.ptsTotales);
+              .replace(/\{ptsGanados\}/g, canjeData.ptsGanados)
+              .replace(/\{ptsTotales\}/g, canjeData.ptsTotales + canjeData.ptsGanados);
             var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
             document.getElementById('wa-nombre-display').textContent=canjeData.nombre;
             document.getElementById('wa-preview-msg').textContent=msgCanje;
@@ -1574,13 +1575,15 @@ function canjearDescuento() {
   mostrarPuntosCliente(nombre);
   // Guardar datos del canje para usar al momento de guardar la venta
   canjeAplicado = true;
+  var ptsGanadosEstimado = Math.floor(valDesc/1000)*(db.config.ptosPorMil||1);
   canjeData = {
     nombre: nombre,
     pct: pct,
     totalAntes: val,
     totalDespues: valDesc,
     ptsCanjeados: umbral,
-    ptsTotales: ptsTotalesActual
+    ptsTotales: ptsTotalesActual,
+    ptsGanados: ptsGanadosEstimado
   };
   alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces.\nEl mensaje de canje se enviar\u00E1 al guardar la venta.');
 }
