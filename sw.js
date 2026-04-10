@@ -3,7 +3,7 @@
 //  Maneja caché offline + notificaciones de cobro
 // ============================================================
 
-var CACHE_NAME = 'aca-v43';
+var CACHE_NAME = 'aca-v43.5';
 var ASSETS = [
   './',
   './AlfajoresConAmor_Control.html',
