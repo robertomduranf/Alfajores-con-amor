@@ -580,6 +580,7 @@ function guardarRecibo() {
         }
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+        limpiarNE();
         if(tipo==='Venta'&&tel&&pago==='contado'){
           if(canjeAplicado && canjeData.nombre) {
             // Mensaje de canje
@@ -612,8 +613,8 @@ function guardarRecibo() {
   } else {
     rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();
     if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+    limpiarNE();
   }
-  limpiarNE();
 }
 
 function limpiarNE() {
