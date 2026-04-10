@@ -21,12 +21,12 @@ body{font-family:"Segoe UI",Arial,sans-serif;background:var(--bg);color:var(--te
 .btn-login:hover{background:var(--accent2);}
 #login-error{color:var(--red);font-size:.88rem;margin-top:10px;display:none;}
 #app{display:none;flex-direction:column;min-height:100vh;}
-header{background:var(--accent);color:#fff;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);flex-wrap:wrap;gap:6px;}
+header{background:var(--accent);color:#fff;padding:10px 20px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 2px 8px rgba(0,0,0,.2);}
 header .logo-wrap{display:flex;align-items:center;gap:12px;}
 header img{height:48px;width:auto;}
 header h1{font-size:1.15rem;letter-spacing:.5px;}
 .header-right{display:flex;align-items:center;gap:12px;}
-.user-badge{background:rgba(255,255,255,.18);padding:4px 10px;border-radius:20px;font-size:.78rem;max-width:150px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.user-badge{background:rgba(255,255,255,.18);padding:5px 12px;border-radius:20px;font-size:.85rem;}
 .btn-logout{background:rgba(255,255,255,.22);border:none;color:#fff;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:.85rem;}
 .btn-logout:hover{background:rgba(255,255,255,.35);}
 .tabs-bar{background:var(--bg2);border-bottom:2px solid var(--border);display:flex;overflow-x:auto;padding:0 10px;}
@@ -35,23 +35,14 @@ header h1{font-size:1.15rem;letter-spacing:.5px;}
 .tab-btn.active{color:var(--accent);border-bottom-color:var(--accent);font-weight:700;}
 .tab-btn:hover{color:var(--accent);background:rgba(130,73,19,.06);}
 .tab-badge{position:absolute;top:6px;right:4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;padding:1px 5px;font-weight:700;}
-.tab-content{padding:20px;flex:1;} @media(max-width:500px){.tab-content{padding:10px;}}
+.tab-content{padding:20px;flex:1;}
 .tab-pane{display:none;}.tab-pane.active{display:block;}
 .card{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px;margin-bottom:18px;border:1px solid var(--border);}
 .card h3{color:var(--accent);margin-bottom:14px;font-size:1rem;}
 .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
 .grid-3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
 .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;}
-@media(max-width:700px){
-  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}
-  .grid-2 .card[style*="grid-column:span 2"]{grid-column:span 1 !important;}
-  header h1{font-size:.95rem;}
-  .tab-content{padding:12px;}
-  .card{padding:14px;}
-  .user-badge{display:none;}
-  header{padding:8px 12px;}
-  .kpi .kpi-val{font-size:1.3rem;}
-}
+@media(max-width:700px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr;}}
 @media(min-width:700px) and (max-width:1000px){.grid-3,.grid-4{grid-template-columns:1fr 1fr;}}
 .form-group{margin-bottom:14px;}
 .form-group label{display:block;font-size:.83rem;color:var(--text2);margin-bottom:4px;font-weight:600;}
@@ -103,12 +94,20 @@ tr:hover td{background:rgba(130,73,19,.04);}
 @media(max-width:768px){
   #admin-grid{grid-template-columns:1fr!important;}
   #admin-grid .card[style]{grid-column:1!important;}
-  .tab-content{padding:10px;}
   header h1{font-size:.95rem;}
   .user-badge{font-size:.72rem;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .tabs-bar .tab-btn{padding:10px 12px;font-size:.8rem;}
 }
-</style>
+
+@media(max-width:768px){
+  #admin-grid{grid-template-columns:1fr!important;}
+  #admin-grid .card[style]{grid-column:1!important;}
+  header h1{font-size:.95rem;}
+  .user-badge{font-size:.72rem;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .tabs-bar .tab-btn{padding:10px 12px;font-size:.8rem;}
+}
+.tab-badge{position:absolute;top:6px;right:4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;padding:1px 5px;font-weight:700;}
+.tab-btn{position:relative;}</style>
 <link rel="manifest" href="./manifest.json">
 <meta name="theme-color" content="#824913">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -143,11 +142,11 @@ tr:hover td{background:rgba(130,73,19,.04);}
   <header>
     <div class="logo-wrap">
       <img src="./logo-header.png" alt="Logo">
-      <h1 id="header-ciudad">Medellín</h1>
+      <h1 id="header-ciudad">Medell&iacute;n</h1>
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
-      <button class="btn-logout" onclick="actualizarDatos()" title="Actualizar datos">&#x1F504;</button>
+      <button class="btn-logout" onclick="actualizarDatos()" title="Actualizar">&#x1F504;</button>
       <button id="btn-instalar" class="btn-logout" style="display:none;background:rgba(255,255,255,.35);" onclick="instalarPWA()">&#x1F4F2; Instalar App</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
@@ -183,7 +182,17 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group"><label>Total ($)</label><input type="number" id="ne-total" placeholder="0" readonly style="background:#e8e0d8;font-weight:700;"></div>
           <div class="form-group" id="ne-pago-group"><label>Forma de pago</label><select id="ne-pago" onchange="onPagoChange()"><option value="contado">Contado</option><option value="credito">Cr&eacute;dito</option></select></div>
           <div class="form-group" id="ne-fechacobro-group" style="display:none;"><label>&#x1F4C5; Fecha de cobro</label><input type="date" id="ne-fechacobro"><small>El sistema te alertar&aacute; un d&iacute;a antes.</small></div>
-          <div class="form-group" id="ne-cliente-group"><label>Cliente <small style="color:var(--red);">*requerido en ventas</small></label><input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value)" autocomplete="off"><div id="cliente-suggestions" style="position:relative;"></div></div>
+          <div class="form-group" id="ne-cliente-group">
+            <label>Cliente <small style="color:var(--red);">*requerido en ventas</small></label>
+            <input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value);mostrarPuntosCliente(this.value);" autocomplete="off">
+            <div id="cliente-suggestions" style="position:relative;"></div>
+          </div>
+          <div id="ne-puntos-info" style="display:none;margin-bottom:14px;padding:10px 14px;background:#fff9f0;border-radius:8px;border-left:4px solid #824913;">
+            <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px;">
+              <span id="ne-puntos-txt" style="font-size:.88rem;color:#824913;font-weight:600;"></span>
+              <button class="btn btn-primary btn-sm" id="ne-btn-canjear" onclick="canjearDescuento()" style="display:none;">&#x1F381; Canjear descuento</button>
+            </div>
+          </div>
           <div class="form-group" id="ne-tel-group"><label>Tel&eacute;fono <small>(auto-registra cliente nuevo)</small></label><input type="text" id="ne-tel" placeholder="Ej: 3001234567"></div>
           <div class="form-group"><label>Responsable</label><input type="text" id="ne-responsable" readonly></div>
           <div class="form-group"><label>Notas (opcional)</label><textarea id="ne-notas" placeholder="Notas adicionales"></textarea></div>
@@ -198,10 +207,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
 
     <!-- DEUDORES -->
     <div class="tab-pane" id="tab-deudores">
-      <div class="card">
-        <h3>&#x1F4B8; Deudores Pendientes</h3>
-        <div id="deudores-lista"></div>
-      </div>
+      <div class="card"><h3>&#x1F4B8; Deudores Pendientes</h3><div id="deudores-lista"></div></div>
     </div>
 
     <!-- HISTORIAL -->
@@ -271,9 +277,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
       <div class="card">
         <h3>&#x1F4AC; Postventa</h3>
         <p style="color:#6b4226;font-size:.9rem;margin-bottom:16px;">Clientes que han comprado y a&uacute;n no han recibido el mensaje de postventa.</p>
-        <div class="form-group" style="max-width:320px;margin-bottom:14px;">
-          <input type="text" id="pv-buscar" placeholder="Buscar cliente..." oninput="renderPostventa()">
-        </div>
+        <div class="form-group" style="max-width:320px;margin-bottom:14px;"><input type="text" id="pv-buscar" placeholder="Buscar cliente..." oninput="renderPostventa()"></div>
         <div id="postventa-lista"></div>
       </div>
     </div>
@@ -296,7 +300,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <button class="btn btn-secondary" style="margin-left:8px;" onclick="probarConexion()">Probar</button>
           <div id="gas-status" style="margin-top:10px;font-size:.88rem;"></div>
         </div>
-
         <div class="card"><h3>&#x1F4AC; Mensajes WhatsApp</h3>
           <div class="form-group"><label>Prefijo pa&iacute;s (sin +)</label><input type="text" id="cfg-waprefijo" placeholder="57" maxlength="5"><small>Colombia=57 &middot; M&eacute;xico=52 &middot; Espa&ntilde;a=34 &middot; USA=1</small></div>
           <div class="form-group"><label>Mensaje al vender (contado)</label><textarea id="cfg-wamsg" rows="3"></textarea><small>Variables: {nombre}</small></div>
@@ -305,27 +308,22 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group"><label>Mensaje Postventa</label><textarea id="cfg-wapostventa" rows="3"></textarea><small>Variable: {nombre}</small></div>
           <button class="btn btn-primary" onclick="guardarWaConfig()">Guardar Mensajes WA</button>
         </div>
-
         <div class="card"><h3>&#x1F36B; Puntos Dulces</h3>
           <div class="form-group"><label>Puntos por cada $1.000</label><input type="number" id="cfg-ptosmil" min="0.1" step="0.1"></div>
           <div class="form-group"><label>Puntos por referido</label><input type="number" id="cfg-ptosref" min="1"></div>
-          <div class="form-group"><label>Puntos para ganar descuento</label><input type="number" id="cfg-ptosumbral" min="1"></div>
+          <div class="form-group"><label>Puntos para canjear descuento</label><input type="number" id="cfg-ptosumbral" min="1"></div>
           <div class="form-group"><label>Porcentaje de descuento (%)</label><input type="number" id="cfg-descuento" min="1" max="100"></div>
-          <div class="form-group"><label>Vigencia del bono (d&iacute;as)</label><input type="number" id="cfg-bonodias" min="1"></div>
+          <div class="form-group"><label>Vigencia del bono WA (d&iacute;as)</label><input type="number" id="cfg-bonodias" min="1"></div>
           <button class="btn btn-primary" onclick="guardarPuntosConfig()">Guardar Config Puntos</button>
         </div>
-
         <div class="card"><h3>&#x1F464; Gesti&oacute;n de Usuarios</h3>
           <div id="usuarios-lista"></div>
           <button class="btn btn-primary mt-8" onclick="abrirModalUsuario(null)">&#x2795; Nuevo Usuario</button>
         </div>
-
-
         <div class="card" style="grid-column:span 2;"><h3>&#x1F6CD;&#xFE0F; Cat&aacute;logo de Productos</h3>
           <div id="catalogo-lista"></div>
           <button class="btn btn-primary mt-8" onclick="abrirModalProducto(null)">&#x2795; Nuevo Producto</button>
         </div>
-
         <div class="card" style="grid-column:span 2;"><h3>&#x1F4CC; Gastos Fijos Anuales</h3>
           <div class="form-group"><label>A&ntilde;o</label><input type="number" id="gf-anio" value="2025" style="max-width:120px;"></div>
           <div id="gf-lista"></div>
@@ -333,11 +331,10 @@ tr:hover td{background:rgba(130,73,19,.04);}
         </div>
       </div>
     </div>
-
   </div>
 </div>
 
-<!-- MODAL PRODUCTO -->
+<!-- MODALES -->
 <div class="modal-overlay" id="modal-producto">
   <div class="modal"><h3 id="modal-prod-title">Producto</h3>
     <input type="hidden" id="mp-id">
@@ -349,8 +346,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
     <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-producto')">Cancelar</button><button class="btn btn-primary" onclick="guardarProducto()">Guardar</button></div>
   </div>
 </div>
-
-<!-- MODAL USUARIO -->
 <div class="modal-overlay" id="modal-usuario">
   <div class="modal"><h3 id="modal-usr-title">Usuario</h3>
     <input type="hidden" id="mu-id">
@@ -361,27 +356,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
     <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-usuario')">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button></div>
   </div>
 </div>
-
-<!-- MODAL INSTALAR -->
-<div class="modal-overlay" id="modal-instalar">
-  <div class="modal" style="max-width:380px;text-align:center;">
-    <div style="font-size:3rem;margin-bottom:10px;">&#x1F4F2;</div>
-    <h3>Instalar App</h3>
-    <div style="margin:16px 0;">
-      <div style="background:#f5e2bc;border-radius:10px;padding:16px;text-align:left;margin-bottom:12px;">
-        <strong>&#x1F916; Android</strong><br>
-        <small style="color:#6b4226;">Toca los <strong>3 puntos</strong> del navegador &rarr; <strong>"A&ntilde;adir a pantalla de inicio"</strong></small>
-      </div>
-      <div style="background:#f5e2bc;border-radius:10px;padding:16px;text-align:left;">
-        <strong>&#x1F34E; iPhone / iPad</strong><br>
-        <small style="color:#6b4226;">Toca el bot&oacute;n <strong>Compartir</strong> &#x1F4E4; &rarr; <strong>"A&ntilde;adir a pantalla de inicio"</strong></small>
-      </div>
-    </div>
-    <button class="btn btn-primary w100" onclick="cerrarModal('modal-instalar')">Entendido</button>
-  </div>
-</div>
-
-<!-- MODAL WA VENTA -->
 <div class="modal-overlay" id="modal-wa">
   <div class="modal wa-modal">
     <div class="wa-icon">&#x1F4AC;</div>
@@ -394,20 +368,16 @@ tr:hover td{background:rgba(130,73,19,.04);}
     </div>
   </div>
 </div>
-
-<!-- MODAL ALERTAS COBRO -->
 <div class="modal-overlay" id="modal-alerta-cobro">
   <div class="modal">
     <h3>&#x23F0; Cobros para ma&ntilde;ana</h3>
-    <p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes tienen pagos programados para ma&ntilde;ana. &iquest;Deseas enviarles un recordatorio?</p>
+    <p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes tienen pagos programados para ma&ntilde;ana.</p>
     <div id="alerta-cobro-lista"></div>
     <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-alerta-cobro')">Cerrar</button></div>
   </div>
 </div>
 
 <script>
-
-/* ===================== DB ===================== */
 var db = {
   recibos: [],
   productos: [],
@@ -497,19 +467,13 @@ document.getElementById('li-user').addEventListener('keydown',function(e){if(e.k
 function loginAs(user) {
   db.currentUser=user;
   localStorage.setItem('aca_session', JSON.stringify(user));
-  // Limpiar datos locales para forzar carga fresca desde Sheets
-  localStorage.removeItem('aca_recibos');
-  localStorage.removeItem('aca_clientes');
-  localStorage.removeItem('aca_productos');
-  localStorage.removeItem('aca_deudores');
-  localStorage.removeItem('aca_puntos');
-  localStorage.removeItem('aca_gastosFijos');
+  localStorage.removeItem('aca_recibos'); localStorage.removeItem('aca_clientes');
+  localStorage.removeItem('aca_productos'); localStorage.removeItem('aca_deudores');
+  localStorage.removeItem('aca_puntos'); localStorage.removeItem('aca_gastosFijos');
   db.recibos=[]; db.clientes=[]; db.productos=[];
   db.deudores=[]; db.puntos={}; db.gastosFijos={};
-  // Mostrar pantalla de carga
   document.getElementById('login-screen').style.display='none';
   document.getElementById('loading-screen').style.display='flex';
-  // Cargar datos frescos desde Sheets
   cargarDesdeSheets(function(ok) {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').style.display='flex';
@@ -517,7 +481,6 @@ function loginAs(user) {
     applyRoleUI(user.rol);
     initApp();
     checkAlertasCobro();
-    if (!ok) console.warn('No se pudo cargar desde Sheets');
   });
 }
 
@@ -678,6 +641,7 @@ function buscarClienteSugerencia(q) {
       document.getElementById('ne-cliente').value=c.nombre;
       document.getElementById('ne-tel').value=c.tel||'';
       box.innerHTML='';
+      mostrarPuntosCliente(c.nombre);
     };
     div.appendChild(item);
   });
@@ -690,95 +654,53 @@ function buscarClienteSugerencia(q) {
 function guardarRecibo() {
   var tipo=document.getElementById('ne-tipo').value;
   var fechaRaw=document.getElementById('ne-fecha').value;
-  var fecha = fechaRaw ? fechaRaw.split('T')[0] : fechaHoy();
+  var fecha=fechaRaw?fechaRaw.split('T')[0]:fechaHoy();
   var desc=document.getElementById('ne-descripcion').value.trim();
   var valor=parseFloat(document.getElementById('ne-valor').value)||0;
   var cant=parseFloat(document.getElementById('ne-cantidad').value)||1;
   var total=valor*cant;
-  var cliente=document.getElementById('ne-cliente').value.trim();
-  var tel=document.getElementById('ne-tel').value.trim().replace(/\D/g,'');
-  var notas=document.getElementById('ne-notas').value.trim();
+  var cliente=documento('ne-cliente');
+  var tel=documento('ne-tel').replace(/\D/g,'');
+  var notas=documento('ne-notas');
   var pago=tipo==='Venta'?document.getElementById('ne-pago').value:'contado';
   var fechaCobro=pago==='credito'?document.getElementById('ne-fechacobro').value:'';
-
   if(!fecha||!desc||valor<=0){alert('Completa fecha, descripci\u00F3n y valor.');return;}
   if(pago==='credito'&&!fechaCobro){alert('Ingresa la fecha de cobro.');return;}
   if(tipo==='Venta'&&!cliente){alert('Ingresa el nombre del cliente.');return;}
-
-  // Auto-registrar cliente si no existe
-  if(tipo==='Venta'&&cliente&&tel) {
+  if(tipo==='Venta'&&cliente&&tel){
     var exists=false;
-    for(var i=0;i<db.clientes.length;i++){
-      if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){exists=true;break;}
-    }
+    for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){exists=true;break;}}
     if(!exists) db.clientes.push({id:Date.now().toString(),nombre:cliente,tel:tel,email:'',ciudad:'',notas:''});
   }
-
-  var rec={
-    id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,
-    cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,
-    responsable:db.currentUser.nombre,recibo:'PENDING',notas:notas,
-    pago:pago,fechaCobro:fechaCobro,ts:Date.now()
-  };
-
-  // Sumar puntos si es venta
-  if(tipo==='Venta'&&cliente) {
-    var ptsGanados=Math.floor(total/1000)*(db.config.ptosPorMil||1);
-    if(ptsGanados>0) sumarPuntos(cliente,ptsGanados,'Compra: '+desc);
-  }
-
-  // Enviar a Sheets - el servidor asigna el consecutivo
-  var url = db.config.gasUrl || '';
-  if(url) {
-    var params = '?accion=saveReceipt&data=' + encodeURIComponent(JSON.stringify(rec));
-    fetch(url + params, {method:'GET', redirect:'follow'})
+  var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,recibo:'PENDING',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
+  if(tipo==='Venta'&&cliente){var pts=Math.floor(total/1000)*(db.config.ptosPorMil||1);if(pts>0)sumarPuntos(cliente,pts,'Compra: '+desc);}
+  var url=db.config.gasUrl||'';
+  if(url){
+    var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
+    fetch(url+params,{method:'GET',redirect:'follow'})
       .then(function(r){return r.json();})
       .then(function(d){
-        if(d.status==='ok' && d.recibo) {
-          rec.recibo = d.recibo;
-        }
+        if(d.status==='ok'&&d.recibo) rec.recibo=d.recibo;
         db.recibos.push(rec);
-        if(tipo==='Venta'&&pago==='credito') {
-          db.deudores.push({
-            id:'d'+Date.now().toString(),reciboId:rec.id,
-            clienteNombre:cliente,tel:tel,valor:total,
-            fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()
-          });
-        }
+        if(tipo==='Venta'&&pago==='credito') db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
         saveDB();
-        if(tipo==='Venta') {
-          sincronizar('saveCliente', db.clientes);
-          sincronizar('savePuntos', (function(){
-            var arr=[];
-            Object.keys(db.puntos).forEach(function(k){
-              var p=db.puntos[k];
-              arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});
-            });
-            return arr;
-          })());
-          if(pago==='credito') sincronizar('saveDeudor', db.deudores);
+        if(tipo==='Venta'){
+          sincronizar('saveCliente',db.clientes);
+          var arr=[];Object.keys(db.puntos).forEach(function(k){var p=db.puntos[k];arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});});
+          sincronizar('savePuntos',arr);
+          if(pago==='credito') sincronizar('saveDeudor',db.deudores);
         }
-        renderResumenHoy();
-        renderUltimas();
+        renderResumenHoy(); renderUltimas();
         if(tipo==='Venta'&&tel&&pago==='contado') mostrarWaModal(cliente||'Cliente',tel);
-      })
-      .catch(function(){
-        // Sin conexion: guardar local con consecutivo temporal
-        rec.recibo = 'LOCAL-'+Date.now();
-        db.recibos.push(rec);
-        saveDB();
-        renderResumenHoy();
-        renderUltimas();
-      });
+      }).catch(function(){rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();});
   } else {
-    rec.recibo = 'LOCAL-'+Date.now();
-    db.recibos.push(rec);
-    saveDB();
-    renderResumenHoy();
-    renderUltimas();
+    rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();
   }
   limpiarNE();
 }
+
+function documento(id) { return document.getElementById(id).value.trim(); }
+
 function limpiarNE() {
   document.getElementById('ne-descripcion').value='';
   document.getElementById('ne-valor').value='';
@@ -790,6 +712,7 @@ function limpiarNE() {
   document.getElementById('ne-producto').value='';
   document.getElementById('ne-pago').value='contado';
   document.getElementById('ne-fechacobro').value='';
+  var pinfo=document.getElementById('ne-puntos-info');if(pinfo)pinfo.style.display='none';
   onPagoChange();
   actualizarConsecutivo();
 }
@@ -1648,21 +1571,60 @@ function fechaHoy() {
 }
 
 function actualizarDatos() {
-  var btn = document.querySelector('[onclick="actualizarDatos()"]');
-  if(btn) btn.textContent = '⏳';
-  cargarDesdeSheets(function(ok) {
-    if(btn) btn.textContent = '🔄';
-    if(ok) {
-      renderResumenHoy();
-      renderUltimas();
-      renderProductosSelect();
-    }
-    alert(ok ? 'Datos actualizados ✓' : 'Sin conexión, usando datos locales');
+  var btn=document.querySelector('[onclick="actualizarDatos()"]');
+  if(btn) btn.textContent='\u23F3';
+  cargarDesdeSheets(function(ok){
+    if(btn) btn.textContent='\uD83D\uDD04';
+    if(ok){renderResumenHoy();renderUltimas();renderProductosSelect();}
+    alert(ok?'Datos actualizados \u2713':'Sin conexi\u00F3n, usando datos locales');
   });
+}
+
+function mostrarPuntosCliente(nombre) {
+  var info=document.getElementById('ne-puntos-info');
+  var txt=document.getElementById('ne-puntos-txt');
+  var btn=document.getElementById('ne-btn-canjear');
+  if(!info) return;
+  if(!nombre||nombre.length<2){info.style.display='none';return;}
+  var pts=getPuntos(nombre);
+  var umbral=db.config.ptosUmbral||100;
+  var pct=db.config.descuentoPct||10;
+  var bonos=Math.floor(pts/umbral);
+  if(pts<=0){info.style.display='none';return;}
+  info.style.display='';
+  if(bonos>0){
+    txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; '+bonos+' bono(s) de '+pct+'% disponible(s)';
+    btn.style.display='';
+  } else {
+    txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; Faltan '+(umbral-(pts%umbral))+' pts para bono de '+pct+'%';
+    btn.style.display='none';
+  }
+}
+
+function canjearDescuento() {
+  var nombre=document.getElementById('ne-cliente').value.trim();
+  var pts=getPuntos(nombre);
+  var umbral=db.config.ptosUmbral||100;
+  var pct=db.config.descuentoPct||10;
+  if(pts<umbral){alert('El cliente no tiene suficientes puntos.');return;}
+  var val=parseFloat(document.getElementById('ne-valor').value)||0;
+  if(val<=0){alert('Ingresa el valor del producto primero.');return;}
+  document.getElementById('ne-valor').value=Math.round(val*(1-pct/100));
+  calcTotal();
+  var key=nombre.toLowerCase();
+  if(!db.puntos[key]) return;
+  db.puntos[key].total-=umbral;
+  db.puntos[key].historial.push({pts:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
+  saveDB();
+  var arr=[];Object.keys(db.puntos).forEach(function(k){var p=db.puntos[k];arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});});
+  sincronizar('savePuntos',arr);
+  mostrarPuntosCliente(nombre);
+  alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces.');
 }
 
 /* ===================== BOOT ===================== */
 loadDB();
+if(!db.config.gasUrl) db.config.gasUrl='https://script.google.com/macros/s/AKfycbxR-IGIY2-mW8H3J_jV15RmDUCYLaBJcbMk-iTXubyklgQL5a6OE6tkS6XgSdTfDS4Chw/exec';
 // Siempre usar la URL embedada en el HTML como respaldo
 if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbxR-IGIY2-mW8H3J_jV15RmDUCYLaBJcbMk-iTXubyklgQL5a6OE6tkS6XgSdTfDS4Chw/exec';
 // Restaurar sesion si existe
@@ -1678,6 +1640,7 @@ if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AK
     }
   } catch(e) {}
 })();
+
 
 </script>
 </body>
