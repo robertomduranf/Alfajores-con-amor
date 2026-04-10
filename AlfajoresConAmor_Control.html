@@ -185,7 +185,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group" id="ne-cliente-group"><label>Cliente <small style="color:var(--red);">*requerido en ventas</small></label><input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value)" autocomplete="off"><div id="cliente-suggestions" style="position:relative;"></div></div>
           <div class="form-group" id="ne-tel-group"><label>Tel&eacute;fono <small>(auto-registra cliente nuevo)</small></label><input type="text" id="ne-tel" placeholder="Ej: 3001234567"></div>
           <div class="form-group"><label>Responsable</label><input type="text" id="ne-responsable" readonly></div>
-          <div class="form-group"><label>N&uacute;mero de Recibo</label><input type="text" id="ne-recibo" readonly></div>
           <div class="form-group"><label>Notas (opcional)</label><textarea id="ne-notas" placeholder="Notas adicionales"></textarea></div>
           <div class="flex-end"><button class="btn btn-secondary" onclick="limpiarNE()">Limpiar</button><button class="btn btn-primary" onclick="guardarRecibo()">Guardar &#x2713;</button></div>
         </div>
@@ -320,11 +319,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <button class="btn btn-primary mt-8" onclick="abrirModalUsuario(null)">&#x2795; Nuevo Usuario</button>
         </div>
 
-        <div class="card"><h3>&#x1F522; Consecutivos</h3>
-          <div class="form-group"><label>Consecutivo Ventas</label><input type="number" id="cfg-consec1" min="1"></div>
-          <div class="form-group"><label>Consecutivo Gastos/Otros</label><input type="number" id="cfg-consec2" min="1"></div>
-          <button class="btn btn-primary" onclick="guardarConsecutivos()">Guardar</button>
-        </div>
 
         <div class="card" style="grid-column:span 2;"><h3>&#x1F6CD;&#xFE0F; Cat&aacute;logo de Productos</h3>
           <div id="catalogo-lista"></div>
@@ -611,10 +605,7 @@ function setDefaultDates(fromId,toId) {
 
 /* ===================== CONSECUTIVO ===================== */
 function actualizarConsecutivo() {
-  var tipo=document.getElementById('ne-tipo').value;
-  var prefix=tipo==='Venta'?'V':(tipo==='Gasto'?'G':'P');
-  var n=tipo==='Venta'?db.config.consec1:db.config.consec2;
-  document.getElementById('ne-recibo').value=prefix+String(n).padStart(5,'0');
+  // Consecutivo asignado por el servidor al guardar
 }
 
 function onTipoChange() {
@@ -684,33 +675,7 @@ function buscarClienteSugerencia(q) {
 }
 
 /* ===================== GUARDAR RECIBO ===================== */
-function obtenerConsecutivo(tipoConsec, prefix, cb) {
-  var url = db.config.gasUrl || '';
-  if (!url) {
-    var n = tipoConsec==='consec1' ? db.config.consec1 : db.config.consec2;
-    if(tipoConsec==='consec1') db.config.consec1++; else db.config.consec2++;
-    saveDB();
-    cb(prefix + String(n).padStart(5,'0'));
-    return;
-  }
-  fetch(url + '?accion=getNextConsec&tipo=' + tipoConsec + '&prefix=' + prefix, {method:'GET',redirect:'follow'})
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(d.status==='ok' && d.recibo) { cb(d.recibo); }
-      else {
-        var n = tipoConsec==='consec1' ? db.config.consec1 : db.config.consec2;
-        if(tipoConsec==='consec1') db.config.consec1++; else db.config.consec2++;
-        saveDB();
-        cb(prefix + String(n).padStart(5,'0'));
-      }
-    })
-    .catch(function(){
-      var n = tipoConsec==='consec1' ? db.config.consec1 : db.config.consec2;
-      if(tipoConsec==='consec1') db.config.consec1++; else db.config.consec2++;
-      saveDB();
-      cb(prefix + String(n).padStart(5,'0'));
-    });
-}
+// Consecutivo asignado por Apps Script en saveReceipt
 
 function guardarRecibo() {
   var tipo=document.getElementById('ne-tipo').value;
@@ -730,64 +695,79 @@ function guardarRecibo() {
   if(pago==='credito'&&!fechaCobro){alert('Ingresa la fecha de cobro.');return;}
   if(tipo==='Venta'&&!cliente){alert('Ingresa el nombre del cliente.');return;}
 
-  var prefix=tipo==='Venta'?'V':(tipo==='Gasto'?'G':'P');
-  var tipoConsec=tipo==='Venta'?'consec1':'consec2';
-
-  obtenerConsecutivo(tipoConsec, prefix, function(recibo) {
-    // Auto-registrar cliente si no existe
-    if(tipo==='Venta'&&cliente&&tel) {
-      var exists=false;
-      for(var i=0;i<db.clientes.length;i++){
-        if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){exists=true;break;}
-      }
-      if(!exists) db.clientes.push({id:Date.now().toString(),nombre:cliente,tel:tel,email:'',ciudad:'',notas:''});
+  // Auto-registrar cliente si no existe
+  if(tipo==='Venta'&&cliente&&tel) {
+    var exists=false;
+    for(var i=0;i<db.clientes.length;i++){
+      if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){exists=true;break;}
     }
+    if(!exists) db.clientes.push({id:Date.now().toString(),nombre:cliente,tel:tel,email:'',ciudad:'',notas:''});
+  }
 
-    var rec={
-      id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,
-      cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,
-      responsable:db.currentUser.nombre,recibo:recibo,notas:notas,
-      pago:pago,fechaCobro:fechaCobro,ts:Date.now()
-    };
-    db.recibos.push(rec);
+  var rec={
+    id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,
+    cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,
+    responsable:db.currentUser.nombre,recibo:'PENDING',notas:notas,
+    pago:pago,fechaCobro:fechaCobro,ts:Date.now()
+  };
 
-    // Si es credito agregar a deudores
-    if(tipo==='Venta'&&pago==='credito') {
-      db.deudores.push({
-        id:'d'+Date.now().toString(),reciboId:rec.id,
-        clienteNombre:cliente,tel:tel,valor:total,
-        fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()
+  // Sumar puntos si es venta
+  if(tipo==='Venta'&&cliente) {
+    var ptsGanados=Math.floor(total/1000)*(db.config.ptosPorMil||1);
+    if(ptsGanados>0) sumarPuntos(cliente,ptsGanados,'Compra: '+desc);
+  }
+
+  // Enviar a Sheets - el servidor asigna el consecutivo
+  var url = db.config.gasUrl || '';
+  if(url) {
+    var params = '?accion=saveReceipt&data=' + encodeURIComponent(JSON.stringify(rec));
+    fetch(url + params, {method:'GET', redirect:'follow'})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.status==='ok' && d.recibo) {
+          rec.recibo = d.recibo;
+        }
+        db.recibos.push(rec);
+        if(tipo==='Venta'&&pago==='credito') {
+          db.deudores.push({
+            id:'d'+Date.now().toString(),reciboId:rec.id,
+            clienteNombre:cliente,tel:tel,valor:total,
+            fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()
+          });
+        }
+        saveDB();
+        if(tipo==='Venta') {
+          sincronizar('saveCliente', db.clientes);
+          sincronizar('savePuntos', (function(){
+            var arr=[];
+            Object.keys(db.puntos).forEach(function(k){
+              var p=db.puntos[k];
+              arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});
+            });
+            return arr;
+          })());
+          if(pago==='credito') sincronizar('saveDeudor', db.deudores);
+        }
+        renderResumenHoy();
+        renderUltimas();
+        if(tipo==='Venta'&&tel&&pago==='contado') mostrarWaModal(cliente||'Cliente',tel);
+      })
+      .catch(function(){
+        // Sin conexion: guardar local con consecutivo temporal
+        rec.recibo = 'LOCAL-'+Date.now();
+        db.recibos.push(rec);
+        saveDB();
+        renderResumenHoy();
+        renderUltimas();
       });
-    }
-
-    // Sumar puntos si es venta
-    if(tipo==='Venta'&&cliente) {
-      var ptsGanados=Math.floor(total/1000)*(db.config.ptosPorMil||1);
-      if(ptsGanados>0) sumarPuntos(cliente,ptsGanados,'Compra: '+desc);
-    }
-
+  } else {
+    rec.recibo = 'LOCAL-'+Date.now();
+    db.recibos.push(rec);
     saveDB();
-    sincronizar('saveReceipt', rec);
-    if(tipo==='Venta') {
-      sincronizar('saveCliente', db.clientes);
-      sincronizar('savePuntos', (() => {
-        var arr=[];
-        Object.keys(db.puntos).forEach(function(k){
-          var p=db.puntos[k];
-          arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});
-        });
-        return arr;
-      })());
-      if(pago==='credito') sincronizar('saveDeudor', db.deudores);
-    }
-
     renderResumenHoy();
     renderUltimas();
-    actualizarConsecutivo();
-
-    if(tipo==='Venta'&&tel&&pago==='contado') mostrarWaModal(cliente||'Cliente',tel);
-    limpiarNE();
-  });
+  }
+  limpiarNE();
 }
 function limpiarNE() {
   document.getElementById('ne-descripcion').value='';
