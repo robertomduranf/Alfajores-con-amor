@@ -147,6 +147,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
     </div>
     <div class="header-right">
       <span class="user-badge" id="user-badge">&mdash;</span>
+      <button class="btn-logout" onclick="actualizarDatos()" title="Actualizar datos">&#x1F504;</button>
       <button id="btn-instalar" class="btn-logout" style="display:none;background:rgba(255,255,255,.35);" onclick="instalarPWA()">&#x1F4F2; Instalar App</button>
       <button class="btn-logout" onclick="doLogout()">Salir</button>
     </div>
@@ -496,10 +497,19 @@ document.getElementById('li-user').addEventListener('keydown',function(e){if(e.k
 function loginAs(user) {
   db.currentUser=user;
   localStorage.setItem('aca_session', JSON.stringify(user));
+  // Limpiar datos locales para forzar carga fresca desde Sheets
+  localStorage.removeItem('aca_recibos');
+  localStorage.removeItem('aca_clientes');
+  localStorage.removeItem('aca_productos');
+  localStorage.removeItem('aca_deudores');
+  localStorage.removeItem('aca_puntos');
+  localStorage.removeItem('aca_gastosFijos');
+  db.recibos=[]; db.clientes=[]; db.productos=[];
+  db.deudores=[]; db.puntos={}; db.gastosFijos={};
   // Mostrar pantalla de carga
   document.getElementById('login-screen').style.display='none';
   document.getElementById('loading-screen').style.display='flex';
-  // Cargar datos desde Sheets antes de mostrar la app
+  // Cargar datos frescos desde Sheets
   cargarDesdeSheets(function(ok) {
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').style.display='flex';
@@ -507,7 +517,7 @@ function loginAs(user) {
     applyRoleUI(user.rol);
     initApp();
     checkAlertasCobro();
-    if (!ok) console.warn('No se pudo cargar desde Sheets, usando datos locales');
+    if (!ok) console.warn('No se pudo cargar desde Sheets');
   });
 }
 
@@ -1635,6 +1645,20 @@ function fechaHoy() {
   var m = String(d.getMonth()+1).padStart(2,'0');
   var day = String(d.getDate()).padStart(2,'0');
   return y+'-'+m+'-'+day;
+}
+
+function actualizarDatos() {
+  var btn = document.querySelector('[onclick="actualizarDatos()"]');
+  if(btn) btn.textContent = '⏳';
+  cargarDesdeSheets(function(ok) {
+    if(btn) btn.textContent = '🔄';
+    if(ok) {
+      renderResumenHoy();
+      renderUltimas();
+      renderProductosSelect();
+    }
+    alert(ok ? 'Datos actualizados ✓' : 'Sin conexión, usando datos locales');
+  });
 }
 
 /* ===================== BOOT ===================== */
