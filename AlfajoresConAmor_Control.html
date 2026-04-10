@@ -1596,7 +1596,30 @@ function cargarDesdeSheets(cb) {
       });
       if (data.clientes && data.clientes.length)   db.clientes   = data.clientes;
       if (data.deudores && data.deudores.length)   db.deudores   = data.deudores;
-      if (data.puntos)                             db.puntos     = data.puntos;
+      if (data.puntos && data.puntos.length) {
+        db.puntos = {};
+        data.puntos.forEach(function(p) {
+          var key = String(p.clienteKey || p.nombre || '').toLowerCase();
+          if (!key) return;
+          var historial = [];
+          try {
+            var h = p.historial;
+            if (typeof h === 'string') {
+              // Fix double-escaped JSON
+              h = h.replace(/\\"/g, '"').replace(/\\n/g, '');
+              if (h.charAt(0) !== '[') h = '[]';
+              historial = JSON.parse(h);
+            } else if (Array.isArray(h)) {
+              historial = h;
+            }
+          } catch(e) { historial = []; }
+          db.puntos[key] = {
+            nombre: String(p.nombre || ''),
+            total: parseFloat(p.total) || 0,
+            historial: historial
+          };
+        });
+      }
       if (data.gastosFijos && data.gastosFijos.length) {
         var gf = {};
         data.gastosFijos.forEach(function(g) {
