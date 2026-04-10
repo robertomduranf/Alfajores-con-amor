@@ -95,16 +95,76 @@ tr:hover td{background:rgba(130,73,19,.04);}
   #admin-grid{grid-template-columns:1fr!important;}
   #admin-grid .card[style]{grid-column:1!important;}
   header h1{font-size:.95rem;}
-  .user-badge{font-size:.72rem;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .user-badge{font-size:.72rem;padding:3px 8px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .tabs-bar .tab-btn{padding:10px 12px;font-size:.8rem;}
+  /* Nueva entrada - una columna en movil */
+  #tab-nueva-entrada .grid-2{grid-template-columns:1fr!important;}
+  /* Ocultar panel derecho (resumen/ultimas) debajo del formulario */
+  #tab-nueva-entrada .grid-2 > div:last-child{order:2;}
+  #tab-nueva-entrada .grid-2 > div:first-child{order:1;}
+  /* Grids generales */
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr!important;}
+  .card[style*="grid-column:span 2"]{grid-column:span 1!important;}
+  /* Header compacto */
+  header{padding:6px 10px;}
+  header img{height:38px;}
+  .header-right{gap:6px;}
+  .btn-logout{padding:5px 10px;font-size:.8rem;}
+  /* Tabs */
+  .tab-content{padding:8px;}
+  .card{padding:12px;}
+  /* KPIs */
+  .kpi .kpi-val{font-size:1.3rem;}
+  /* Tabla historial scroll */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  /* Formularios */
+  .form-group input,.form-group select,.form-group textarea{font-size:16px;}
+  /* Flex wraps */
+  .client-header{flex-wrap:wrap;}
+  .client-actions{flex-wrap:wrap;}
+  .flex-end{flex-wrap:wrap;}
+}
+@media(max-width:400px){
+  .user-badge{display:none;}
+  header h1{font-size:.85rem;}
 }
 
 @media(max-width:768px){
   #admin-grid{grid-template-columns:1fr!important;}
   #admin-grid .card[style]{grid-column:1!important;}
   header h1{font-size:.95rem;}
-  .user-badge{font-size:.72rem;padding:3px 8px;max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .user-badge{font-size:.72rem;padding:3px 8px;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
   .tabs-bar .tab-btn{padding:10px 12px;font-size:.8rem;}
+  /* Nueva entrada - una columna en movil */
+  #tab-nueva-entrada .grid-2{grid-template-columns:1fr!important;}
+  /* Ocultar panel derecho (resumen/ultimas) debajo del formulario */
+  #tab-nueva-entrada .grid-2 > div:last-child{order:2;}
+  #tab-nueva-entrada .grid-2 > div:first-child{order:1;}
+  /* Grids generales */
+  .grid-2,.grid-3,.grid-4{grid-template-columns:1fr!important;}
+  .card[style*="grid-column:span 2"]{grid-column:span 1!important;}
+  /* Header compacto */
+  header{padding:6px 10px;}
+  header img{height:38px;}
+  .header-right{gap:6px;}
+  .btn-logout{padding:5px 10px;font-size:.8rem;}
+  /* Tabs */
+  .tab-content{padding:8px;}
+  .card{padding:12px;}
+  /* KPIs */
+  .kpi .kpi-val{font-size:1.3rem;}
+  /* Tabla historial scroll */
+  .tbl-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;}
+  /* Formularios */
+  .form-group input,.form-group select,.form-group textarea{font-size:16px;}
+  /* Flex wraps */
+  .client-header{flex-wrap:wrap;}
+  .client-actions{flex-wrap:wrap;}
+  .flex-end{flex-wrap:wrap;}
+}
+@media(max-width:400px){
+  .user-badge{display:none;}
+  header h1{font-size:.85rem;}
 }
 .tab-badge{position:absolute;top:6px;right:4px;background:var(--red);color:#fff;border-radius:10px;font-size:.65rem;padding:1px 5px;font-weight:700;}
 .tab-btn{position:relative;}</style>
