@@ -562,6 +562,9 @@ function guardarRecibo() {
   }
   var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,recibo:'PENDING',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
   if(tipo==='Venta'&&cliente){var pts=Math.floor(total/1000)*(db.config.ptosPorMil||1);if(pts>0)sumarPuntos(cliente,pts,'Compra: '+desc);}
+  // Capturar estado del canje ANTES del fetch para que limpiarNE() no lo borre
+  var localCanjeAplicado=canjeAplicado;
+  var localCanjeData=canjeAplicado?{nombre:canjeData.nombre,pct:canjeData.pct,totalAntes:canjeData.totalAntes,totalDespues:canjeData.totalDespues,ptsCanjeados:canjeData.ptsCanjeados,ptsTotales:canjeData.ptsTotales,ptsGanados:canjeData.ptsGanados}:{};
   var url=db.config.gasUrl||'';
   if(url){
     var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
@@ -581,18 +584,18 @@ function guardarRecibo() {
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
         if(tipo==='Venta'&&tel&&pago==='contado'){
-          if(canjeAplicado && canjeData.nombre) {
+          if(localCanjeAplicado && localCanjeData.nombre) {
             // Mensaje de canje
             var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
-              .replace(/\{nombre\}/g, canjeData.nombre)
-              .replace(/\{descuento\}/g, canjeData.pct)
-              .replace(/\{totalAntes\}/g, fmt(canjeData.totalAntes))
-              .replace(/\{totalDespues\}/g, fmt(canjeData.totalDespues))
-              .replace(/\{ptsCanjeados\}/g, canjeData.ptsCanjeados)
-              .replace(/\{ptsGanados\}/g, canjeData.ptsGanados||0)
-              .replace(/\{ptsTotales\}/g, (canjeData.ptsTotales||0) + (canjeData.ptsGanados||0));
+              .replace(/\{nombre\}/g, localCanjeData.nombre)
+              .replace(/\{descuento\}/g, localCanjeData.pct)
+              .replace(/\{totalAntes\}/g, fmt(localCanjeData.totalAntes))
+              .replace(/\{totalDespues\}/g, fmt(localCanjeData.totalDespues))
+              .replace(/\{ptsCanjeados\}/g, localCanjeData.ptsCanjeados)
+              .replace(/\{ptsGanados\}/g, localCanjeData.ptsGanados||0)
+              .replace(/\{ptsTotales\}/g, (localCanjeData.ptsTotales||0) + (localCanjeData.ptsGanados||0));
             var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
-            document.getElementById('wa-nombre-display').textContent=canjeData.nombre;
+            document.getElementById('wa-nombre-display').textContent=localCanjeData.nombre;
             document.getElementById('wa-preview-msg').textContent=msgCanje;
             waCurrentTel=tel; waCurrentNombre=canjeData.nombre;
             waCurrentProducto=''; waCurrentTotal=0; waCurrentPtsG=0; waCurrentPtsT=0;
@@ -1498,29 +1501,6 @@ function mostrarPuntosCliente(nombre) {
     btn.style.display='none';
   }
 }
-
-function canjearDescuento() {
-  if(canjeAplicado){alert('Ya se aplic\u00F3 un descuento en esta venta.');return;}
-  var nombre=document.getElementById('ne-cliente').value.trim();
-  var pts=getPuntos(nombre);
-  var umbral=db.config.ptosUmbral||100;
-  var pct=db.config.descuentoPct||10;
-  if(pts<umbral){alert('El cliente no tiene suficientes puntos.');return;}
-  var val=parseFloat(document.getElementById('ne-valor').value)||0;
-  if(val<=0){alert('Ingresa el valor del producto primero.');return;}
-  document.getElementById('ne-valor').value=Math.round(val*(1-pct/100));
-  calcTotal();
-  var key=nombre.toLowerCase();
-  if(!db.puntos[key]) return;
-  db.puntos[key].total-=umbral;
-  db.puntos[key].historial.push({pts:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
-  saveDB();
-  var arr=[];Object.keys(db.puntos).forEach(function(k){var p=db.puntos[k];arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});});
-  sincronizar('savePuntos',arr);
-  mostrarPuntosCliente(nombre);
-  alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces.');
-}
-
 
 function actualizarDatos() {
   var btn=document.querySelector('[onclick="actualizarDatos()"]');
