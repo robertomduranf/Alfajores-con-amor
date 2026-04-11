@@ -583,22 +583,20 @@ function guardarRecibo() {
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
         if(tipo==='Venta'&&tel&&pago==='contado'){
-          var _canje = canjeAplicado;
-          var _canjeData = canjeAplicado ? JSON.parse(JSON.stringify(canjeData)) : {};
           limpiarNE();
-          if(_canje) {
-            if(!_canjeData.nombre) _canjeData.nombre = cliente;
+          if(canjeAplicado && canjeData.pct) {
+            if(!canjeData.nombre) canjeData.nombre = cliente;
             // Mensaje de canje
             var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
-              .replace(/\{nombre\}/g, _canjeData.nombre)
-              .replace(/\{descuento\}/g, _canjeData.pct)
-              .replace(/\{totalAntes\}/g, fmt(_canjeData.totalAntes))
-              .replace(/\{totalDespues\}/g, fmt(_canjeData.totalDespues))
-              .replace(/\{ptsCanjeados\}/g, _canjeData.ptsCanjeados)
-              .replace(/\{ptsGanados\}/g, _canjeData.ptsGanados)
-              .replace(/\{ptsTotales\}/g, _canjeData.ptsTotales + _canjeData.ptsGanados);
+              .replace(/\{nombre\}/g, canjeData.nombre)
+              .replace(/\{descuento\}/g, canjeData.pct)
+              .replace(/\{totalAntes\}/g, fmt(canjeData.totalAntes))
+              .replace(/\{totalDespues\}/g, fmt(canjeData.totalDespues))
+              .replace(/\{ptsCanjeados\}/g, canjeData.ptsCanjeados)
+              .replace(/\{ptsGanados\}/g, canjeData.ptsGanados)
+              .replace(/\{ptsTotales\}/g, canjeData.ptsTotales + canjeData.ptsGanados);
             var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
-            document.getElementById('wa-nombre-display').textContent=_canjeData.nombre;
+            document.getElementById('wa-nombre-display').textContent=canjeData.nombre;
             document.getElementById('wa-preview-msg').textContent=msgCanje;
             waCurrentTel=tel; waCurrentNombre=canjeData.nombre;
             waCurrentProducto=''; waCurrentTotal=0; waCurrentPtsG=0; waCurrentPtsT=0;
@@ -606,6 +604,7 @@ function guardarRecibo() {
             window._tempWaMsg=msgCanje; window._tempWaTel=telCanje;
             document.getElementById('modal-wa').classList.add('open');
           } else {
+            canjeAplicado=false; canjeData={};
             var ptsG=Math.floor(total/1000)*(db.config.ptosPorMil||1);
             var ptsT=getPuntos(cliente);
             mostrarWaModal(cliente||'Cliente',tel,desc,total,ptsG,ptsT);
@@ -635,7 +634,6 @@ function limpiarNE() {
   document.getElementById('ne-pago').value='contado';
   document.getElementById('ne-fechacobro').value='';
   var pinfo=document.getElementById('ne-puntos-info');if(pinfo)pinfo.style.display='none';
-  canjeAplicado=false;canjeData={};
   onPagoChange();
   actualizarConsecutivo();
 }
@@ -1641,6 +1639,7 @@ function abrirWhatsApp() {
   }
   canjeAplicado=false; canjeData={};
   cerrarModal('modal-wa');
+  // canjeData reset done after WA sent
 }
 
 function enviarMsgPuntosId(clienteId) {
