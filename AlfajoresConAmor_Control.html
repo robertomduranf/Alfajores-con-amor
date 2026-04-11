@@ -583,7 +583,8 @@ function guardarRecibo() {
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
         if(tipo==='Venta'&&tel&&pago==='contado'){
-          if(canjeAplicado && canjeData.nombre) {
+          if(canjeAplicado) {
+            if(!canjeData.nombre) canjeData.nombre = cliente;
             // Mensaje de canje
             var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
               .replace(/\{nombre\}/g, canjeData.nombre)
