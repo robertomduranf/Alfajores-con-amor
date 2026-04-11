@@ -583,20 +583,30 @@ function guardarRecibo() {
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
         if(tipo==='Venta'&&tel&&pago==='contado'){
+          // Guardar canje ANTES de limpiar
+          var _esCanje = canjeAplicado && canjeData && canjeData.pct;
+          var _cd = _esCanje ? {
+            nombre: canjeData.nombre||cliente,
+            pct: canjeData.pct,
+            totalAntes: canjeData.totalAntes,
+            totalDespues: canjeData.totalDespues,
+            ptsCanjeados: canjeData.ptsCanjeados,
+            ptsTotales: canjeData.ptsTotales,
+            ptsGanados: canjeData.ptsGanados
+          } : null;
           limpiarNE();
-          if(canjeAplicado && canjeData.pct) {
-            if(!canjeData.nombre) canjeData.nombre = cliente;
+          if(_esCanje && _cd) {
             // Mensaje de canje
             var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
-              .replace(/\{nombre\}/g, canjeData.nombre)
-              .replace(/\{descuento\}/g, canjeData.pct)
-              .replace(/\{totalAntes\}/g, fmt(canjeData.totalAntes))
-              .replace(/\{totalDespues\}/g, fmt(canjeData.totalDespues))
-              .replace(/\{ptsCanjeados\}/g, canjeData.ptsCanjeados)
-              .replace(/\{ptsGanados\}/g, canjeData.ptsGanados)
-              .replace(/\{ptsTotales\}/g, canjeData.ptsTotales + canjeData.ptsGanados);
+              .replace(/\{nombre\}/g, _cd.nombre)
+              .replace(/\{descuento\}/g, _cd.pct)
+              .replace(/\{totalAntes\}/g, fmt(_cd.totalAntes))
+              .replace(/\{totalDespues\}/g, fmt(_cd.totalDespues))
+              .replace(/\{ptsCanjeados\}/g, _cd.ptsCanjeados)
+              .replace(/\{ptsGanados\}/g, _cd.ptsGanados)
+              .replace(/\{ptsTotales\}/g, _cd.ptsTotales + _cd.ptsGanados);
             var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
-            document.getElementById('wa-nombre-display').textContent=canjeData.nombre;
+            document.getElementById('wa-nombre-display').textContent=_cd.nombre;
             document.getElementById('wa-preview-msg').textContent=msgCanje;
             waCurrentTel=tel; waCurrentNombre=canjeData.nombre;
             waCurrentProducto=''; waCurrentTotal=0; waCurrentPtsG=0; waCurrentPtsT=0;
@@ -605,6 +615,7 @@ function guardarRecibo() {
             document.getElementById('modal-wa').classList.add('open');
           } else {
             canjeAplicado=false; canjeData={};
+            limpiarNE();
             var ptsG=Math.floor(total/1000)*(db.config.ptosPorMil||1);
             var ptsT=getPuntos(cliente);
             mostrarWaModal(cliente||'Cliente',tel,desc,total,ptsG,ptsT);
@@ -1536,7 +1547,9 @@ function canjearDescuento() {
     ptsCanjeados:umbral, ptsTotales:ptsTotalesActual,
     ptsGanados:ptsGanadosEstimado
   };
-  mostrarPuntosCliente(nombre);
+  // Deshabilitar boton para que no se aplique dos veces
+  var btnCanje=document.getElementById('ne-btn-canjear');
+  if(btnCanje){btnCanje.disabled=true;btnCanje.textContent='\u2713 Descuento aplicado';}
   alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces. El mensaje de canje se enviar\u00E1 al guardar.');
 }
 
