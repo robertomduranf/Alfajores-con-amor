@@ -1408,8 +1408,12 @@ function cargarDesdeSheets(cb) {
       if (data.productos && data.productos.length) db.productos = data.productos.map(function(p){
         return { id:String(p.id), nombre:String(p.nombre), precio:parseFloat(p.precio)||0, costo:parseFloat(p.costo)||0, categoria:String(p.categoria||''), descripcion:String(p.descripcion||'') };
       });
-      if (data.clientes && data.clientes.length)   db.clientes   = data.clientes;
-      if (data.deudores && data.deudores.length)   db.deudores   = data.deudores;
+      if (data.clientes && data.clientes.length) db.clientes = data.clientes.map(function(c) {
+        return { id:String(c.id), nombre:String(c.nombre||''), tel:String(c.tel||''), email:String(c.email||''), ciudad:String(c.ciudad||''), notas:String(c.notas||'') };
+      });
+      if (data.deudores && data.deudores.length) db.deudores = data.deudores.map(function(d) {
+        return { id:String(d.id), reciboId:String(d.reciboId||''), clienteNombre:String(d.clienteNombre||''), tel:String(d.tel||''), valor:parseFloat(d.valor)||0, fechaCobro:String(d.fechaCobro||''), estado:String(d.estado||'pendiente'), ts:parseFloat(d.ts)||0 };
+      });
       if (data.puntos && data.puntos.length) {
         db.puntos = {};
         data.puntos.forEach(function(p) {
