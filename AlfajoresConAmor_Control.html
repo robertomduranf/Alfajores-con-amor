@@ -1529,8 +1529,17 @@ function canjearDescuento() {
   saveDB();
   var arr=[];Object.keys(db.puntos).forEach(function(k){var p=db.puntos[k];arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});});
   sincronizar('savePuntos',arr);
+  var ptsTotalesActual=db.puntos[key]?db.puntos[key].total:0;
+  var ptsGanadosEstimado=Math.floor(totalDespues/1000)*(db.config.ptosPorMil||1);
+  canjeAplicado=true;
+  canjeData={
+    nombre:nombre, pct:pct,
+    totalAntes:totalAntes, totalDespues:totalDespues,
+    ptsCanjeados:umbral, ptsTotales:ptsTotalesActual,
+    ptsGanados:ptsGanadosEstimado
+  };
   mostrarPuntosCliente(nombre);
-  alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces.');
+  alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces. El mensaje de canje se enviar\u00E1 al guardar.');
 }
 
 
