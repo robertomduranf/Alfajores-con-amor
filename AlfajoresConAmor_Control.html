@@ -481,6 +481,8 @@ function onTipoChange() {
 function onPagoChange() {
   var pago=document.getElementById('ne-pago').value;
   document.getElementById('ne-fechacobro-group').style.display=pago==='credito'?'':'none';
+  var nombre=document.getElementById('ne-cliente').value.trim();
+  if(nombre) mostrarPuntosCliente(nombre);
 }
 
 /* ===================== PRODUCTOS SELECT ===================== */
@@ -885,13 +887,14 @@ function renderCRM() {
   filtered.forEach(function(c){
     var pts=getPuntos(c.nombre);
     var ptsBar=Math.min(100,Math.round(pts/umbral*100));
-    var ptsBono=pts>=umbral?'<button class="btn btn-primary btn-sm" onclick="enviarMsgPuntos(\''+c.nombre.replace(/'/g,"\\'")+'\')">\uD83C\uDF81 Bono WA</button>':'';
+    var esc=encodeURIComponent(c.nombre);
+    var ptsBono=pts>=umbral?'<button class="btn btn-primary btn-sm" onclick="enviarMsgPuntosId(\''+c.id+'\')">&#x1F381; Bono WA</button>':'';
     html+='<div class="client-card">'
       +'<div class="client-header">'
       +'<span class="client-name">'+c.nombre+'</span>'
       +'<div class="client-actions">'
       +(c.tel?'<button class="btn btn-wa btn-sm" onclick="waDirecto(\''+c.id+'\')">&#x1F4AC; WA</button>':'')
-      +'<button class="btn btn-secondary btn-sm" onclick="agregarReferido(\''+c.nombre.replace(/'/g,"\\'")+'\')">\uD83D\uDC65 Referido</button>'
+      +'<button class="btn btn-secondary btn-sm" onclick="agregarReferidoId(\''+c.id+'\')">&#x1F465; Referido</button>'
       +'<button class="btn btn-secondary btn-sm" onclick="editarCliente(\''+c.id+'\')">&#x270F;&#xFE0F;</button>'
       +'<button class="btn btn-danger btn-sm" onclick="eliminarCliente(\''+c.id+'\')">&#x1F5D1;&#xFE0F;</button>'
       +'</div></div>'
@@ -1491,9 +1494,11 @@ function mostrarPuntosCliente(nombre) {
   var bonos=Math.floor(pts/umbral);
   if(pts<=0){info.style.display='none';return;}
   info.style.display='';
+  var pago=document.getElementById('ne-pago')?document.getElementById('ne-pago').value:'contado';
   if(bonos>0){
     txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; '+bonos+' bono(s) de '+pct+'% disponible(s)';
-    btn.style.display='';
+    btn.style.display=(pago==='contado')?'':'none';
+    if(pago!=='contado') txt.innerHTML+=' <small style="color:#a07040;">(canje solo en contado)</small>';
   } else {
     txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; Faltan '+(umbral-(pts%umbral))+' pts para bono de '+pct+'%';
     btn.style.display='none';
@@ -1507,9 +1512,13 @@ function canjearDescuento() {
   var pct=db.config.descuentoPct||10;
   if(pts<umbral){alert('El cliente no tiene suficientes puntos.');return;}
   var val=parseFloat(document.getElementById('ne-valor').value)||0;
-  if(val<=0){alert('Ingresa el valor del producto primero.');return;}
-  document.getElementById('ne-valor').value=Math.round(val*(1-pct/100));
+  var cant=parseFloat(document.getElementById('ne-cantidad').value)||1;
+  var totalAntes=val*cant;
+  if(totalAntes<=0){alert('Ingresa el valor del producto primero.');return;}
+  var valConDesc=Math.round(val*(1-pct/100));
+  document.getElementById('ne-valor').value=valConDesc;
   calcTotal();
+  var totalDespues=valConDesc*cant;
   var key=nombre.toLowerCase();
   if(!db.puntos[key]) return;
   db.puntos[key].total-=umbral;
@@ -1544,9 +1553,11 @@ function mostrarPuntosCliente(nombre) {
   var bonos=Math.floor(pts/umbral);
   if(pts<=0){info.style.display='none';return;}
   info.style.display='';
+  var pago=document.getElementById('ne-pago')?document.getElementById('ne-pago').value:'contado';
   if(bonos>0){
     txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; '+bonos+' bono(s) de '+pct+'% disponible(s)';
-    btn.style.display='';
+    btn.style.display=(pago==='contado')?'':'none';
+    if(pago!=='contado') txt.innerHTML+=' <small style="color:#a07040;">(canje solo en contado)</small>';
   } else {
     txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; Faltan '+(umbral-(pts%umbral))+' pts para bono de '+pct+'%';
     btn.style.display='none';
@@ -1575,12 +1586,11 @@ function canjearDescuento() {
   mostrarPuntosCliente(nombre);
   // Guardar datos del canje para usar al momento de guardar la venta
   canjeAplicado = true;
-  var ptsGanadosEstimado = Math.floor(valDesc/1000)*(db.config.ptosPorMil||1);
   canjeData = {
     nombre: nombre,
     pct: pct,
-    totalAntes: val,
-    totalDespues: valDesc,
+    totalAntes: totalAntes,
+    totalDespues: totalDespues,
     ptsCanjeados: umbral,
     ptsTotales: ptsTotalesActual,
     ptsGanados: ptsGanadosEstimado
@@ -1619,6 +1629,20 @@ function abrirWhatsApp() {
   }
   canjeAplicado=false; canjeData={};
   cerrarModal('modal-wa');
+}
+
+function enviarMsgPuntosId(clienteId) {
+  var c=null;
+  for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===clienteId){c=db.clientes[i];break;}}
+  if(!c) return;
+  enviarMsgPuntos(c.nombre);
+}
+
+function agregarReferidoId(clienteId) {
+  var c=null;
+  for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===clienteId){c=db.clientes[i];break;}}
+  if(!c) return;
+  agregarReferido(c.nombre);
 }
 
 /* ===================== BOOT ===================== */
