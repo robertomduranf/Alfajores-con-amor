@@ -1518,6 +1518,7 @@ function mostrarPuntosCliente(nombre) {
 }
 
 function canjearDescuento() {
+  if(canjeAplicado){alert('Ya se aplic\u00F3 un descuento en esta venta.');return;}
   var nombre=document.getElementById('ne-cliente').value.trim();
   var pts=getPuntos(nombre);
   var umbral=db.config.ptosUmbral||100;
@@ -1588,6 +1589,7 @@ function mostrarPuntosCliente(nombre) {
 }
 
 function canjearDescuento() {
+  if(canjeAplicado){alert('Ya se aplic\u00F3 un descuento en esta venta.');return;}
   var nombre=document.getElementById('ne-cliente').value.trim();
   var pts=getPuntos(nombre);
   var umbral=db.config.ptosUmbral||100;
