@@ -583,19 +583,22 @@ function guardarRecibo() {
         renderResumenHoy(); renderUltimas();
         if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
         if(tipo==='Venta'&&tel&&pago==='contado'){
-          if(canjeAplicado) {
-            if(!canjeData.nombre) canjeData.nombre = cliente;
+          var _canje = canjeAplicado;
+          var _canjeData = canjeAplicado ? JSON.parse(JSON.stringify(canjeData)) : {};
+          limpiarNE();
+          if(_canje) {
+            if(!_canjeData.nombre) _canjeData.nombre = cliente;
             // Mensaje de canje
             var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
-              .replace(/\{nombre\}/g, canjeData.nombre)
-              .replace(/\{descuento\}/g, canjeData.pct)
-              .replace(/\{totalAntes\}/g, fmt(canjeData.totalAntes))
-              .replace(/\{totalDespues\}/g, fmt(canjeData.totalDespues))
-              .replace(/\{ptsCanjeados\}/g, canjeData.ptsCanjeados)
-              .replace(/\{ptsGanados\}/g, canjeData.ptsGanados)
-              .replace(/\{ptsTotales\}/g, canjeData.ptsTotales + canjeData.ptsGanados);
+              .replace(/\{nombre\}/g, _canjeData.nombre)
+              .replace(/\{descuento\}/g, _canjeData.pct)
+              .replace(/\{totalAntes\}/g, fmt(_canjeData.totalAntes))
+              .replace(/\{totalDespues\}/g, fmt(_canjeData.totalDespues))
+              .replace(/\{ptsCanjeados\}/g, _canjeData.ptsCanjeados)
+              .replace(/\{ptsGanados\}/g, _canjeData.ptsGanados)
+              .replace(/\{ptsTotales\}/g, _canjeData.ptsTotales + _canjeData.ptsGanados);
             var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
-            document.getElementById('wa-nombre-display').textContent=canjeData.nombre;
+            document.getElementById('wa-nombre-display').textContent=_canjeData.nombre;
             document.getElementById('wa-preview-msg').textContent=msgCanje;
             waCurrentTel=tel; waCurrentNombre=canjeData.nombre;
             waCurrentProducto=''; waCurrentTotal=0; waCurrentPtsG=0; waCurrentPtsT=0;
@@ -608,7 +611,6 @@ function guardarRecibo() {
             mostrarWaModal(cliente||'Cliente',tel,desc,total,ptsG,ptsT);
           }
         }
-        limpiarNE();
       }).catch(function(){
         rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();
         renderResumenHoy();renderUltimas();
