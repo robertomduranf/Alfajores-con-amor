@@ -1872,7 +1872,7 @@ db.config.gasUrl='https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3
     if (saved) {
       var user = JSON.parse(saved);
       // Verificar que el usuario sigue existiendo
-      var exists = db.config.usuarios.some(function(u) { return u.id === user.id && u.password === user.password; });
+      var exists = db.config.usuarios.some(function(u) { return u.id === user.id && String(u.password) === String(user.password); });
       if (exists) { loginAs(user); return; }
       localStorage.removeItem('aca_session');
     }
