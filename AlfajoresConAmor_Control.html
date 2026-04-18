@@ -189,7 +189,8 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group" id="ne-fechacobro-group" style="display:none;"><label>&#x1F4C5; Fecha de cobro</label><input type="date" id="ne-fechacobro"><small>El sistema te alertar&aacute; un d&iacute;a antes.</small></div>
           <div class="form-group" id="ne-cliente-group">
             <label>Cliente <small style="color:var(--red);">*requerido en ventas</small></label>
-            <input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value);mostrarPuntosCliente(this.value);" autocomplete="off">
+            <input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value);mostrarPuntosCliente(this.value);mostrarNotaCliente(this.value);" autocomplete="off">
+            <div id="ne-cliente-nota" style="display:none;margin-top:4px;padding:5px 10px;background:#fff3e0;border-radius:6px;border-left:3px solid #e8a020;font-size:.82rem;color:#a07040;"></div>
             <div id="cliente-suggestions" style="position:relative;"></div>
           </div>
           <div id="ne-puntos-info" style="display:none;margin-bottom:14px;padding:10px 14px;background:#fff9f0;border-radius:8px;border-left:4px solid #824913;">
@@ -595,6 +596,7 @@ function buscarClienteSugerencia(q) {
       currentNeClienteId=c.id||'';
       box.innerHTML='';
       mostrarPuntosCliente(c.nombre);
+      mostrarNotaCliente(c.nombre);
     };
     div.appendChild(item);
   });
@@ -798,6 +800,7 @@ function limpiarNE() {
   document.getElementById('ne-pago').value='contado';
   document.getElementById('ne-fechacobro').value='';
   var pinfo=document.getElementById('ne-puntos-info');if(pinfo)pinfo.style.display='none';
+  var cnota=document.getElementById('ne-cliente-nota');if(cnota){cnota.style.display='none';cnota.textContent='';}
   currentNeClienteId='';
   canjeAplicado=false;canjeData={};
   onPagoChange();
@@ -1733,7 +1736,24 @@ function actualizarDatos() {
   }, _pend);
 }
 
-function mostrarPuntosCliente(nombre) {
+function mostrarNotaCliente(nombre) {
+  var div=document.getElementById('ne-cliente-nota');
+  if(!div) return;
+  if(!nombre||nombre.length<2){div.style.display='none';div.textContent='';return;}
+  var c=null;
+  for(var i=0;i<db.clientes.length;i++){
+    if(db.clientes[i].nombre.toLowerCase()===nombre.toLowerCase()){c=db.clientes[i];break;}
+  }
+  if(c&&c.notas){
+    div.textContent='\uD83D\uDCC4 Cliente existente: '+c.nombre+(c.notas?' \u2014 '+c.notas:'')+(c.tel?' \u00B7 '+c.tel:'');
+    div.style.display='';
+  } else if(c) {
+    div.textContent='\uD83D\uDCC4 Cliente existente: '+c.nombre+(c.tel?' \u00B7 '+c.tel:'');
+    div.style.display='';
+  } else {
+    div.style.display='none';div.textContent='';
+  }
+}
   var info=document.getElementById('ne-puntos-info');
   var txt=document.getElementById('ne-puntos-txt');
   var btn=document.getElementById('ne-btn-canjear');
