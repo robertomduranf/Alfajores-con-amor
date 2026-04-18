@@ -270,7 +270,7 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbxR-IGIY2-mW8H3J_jV15RmDUCYLaBJcbMk-iTXubyklgQL5a6OE6tkS6XgSdTfDS4Chw/exec',
+    gasUrl: 'https://script.google.com/macros/s/AKfycbzS0tGfbY3rjIcnw6ycDPeh9gbVoJIaSleYaVBW9AKoaPFrEpqfVQO4vzENawnRlI83-g/exec', // sobreescrita en el boot — editar solo ahi
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
@@ -560,7 +560,7 @@ function guardarRecibo() {
     for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){exists=true;break;}}
     if(!exists) db.clientes.push({id:Date.now().toString(),nombre:cliente,tel:tel,email:'',ciudad:'',notas:''});
   }
-  var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,recibo:'PENDING',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
+  var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,recibo:'',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
   if(tipo==='Venta'&&cliente){var pts=Math.floor(total/1000)*(db.config.ptosPorMil||1);if(pts>0)sumarPuntos(cliente,pts,'Compra: '+desc);}
   // Capturar estado del canje ANTES del fetch para que limpiarNE() no lo borre
   var localCanjeAplicado=canjeAplicado;
@@ -577,8 +577,6 @@ function guardarRecibo() {
         saveDB();
         if(tipo==='Venta'){
           sincronizar('saveCliente',db.clientes);
-          var arr=[];Object.keys(db.puntos).forEach(function(k){var p=db.puntos[k];arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});});
-          sincronizar('savePuntos',arr);
           if(pago==='credito') sincronizar('saveDeudor',db.deudores);
         }
         renderResumenHoy(); renderUltimas();
@@ -646,13 +644,7 @@ function sumarPuntos(clienteNombre, pts, motivo) {
   db.puntos[key].total += pts;
   db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:fechaHoy()});
   saveDB();
-  // Enviar version simplificada para evitar URL demasiado larga
-  var puntosSimple = [];
-  Object.keys(db.puntos).forEach(function(k) {
-    var p = db.puntos[k];
-    puntosSimple.push({clienteKey:k, nombre:p.nombre, total:p.total, historial:p.historial});
-  });
-  sincronizar('savePuntos', puntosSimple);
+  sincronizar('addPuntosDelta',{clienteKey:key,nombre:clienteNombre,delta:pts,motivo:motivo,fecha:fechaHoy()});
 }
 
 function getPuntos(clienteNombre) {
@@ -1417,7 +1409,8 @@ function cargarDesdeSheets(cb) {
       if (data.puntos && data.puntos.length) {
         db.puntos = {};
         data.puntos.forEach(function(p) {
-          var key = String(p.clienteKey || p.nombre || '').toLowerCase();
+          var rawKey = String(p.clienteKey || '');
+          var key = (!rawKey || !isNaN(rawKey)) ? String(p.nombre || '').toLowerCase() : rawKey.toLowerCase();
           if (!key) return;
           var historial = [];
           try {
@@ -1506,37 +1499,6 @@ function mostrarPuntosCliente(nombre) {
   }
 }
 
-function actualizarDatos() {
-  var btn=document.querySelector('[onclick="actualizarDatos()"]');
-  if(btn) btn.textContent='...';
-  cargarDesdeSheets(function(ok){
-    if(btn) btn.textContent='\uD83D\uDD04';
-    if(ok){renderResumenHoy();renderUltimas();renderProductosSelect();}
-    alert(ok?'Datos actualizados \u2713':'Sin conexi\u00F3n, usando datos locales');
-  });
-}
-
-function mostrarPuntosCliente(nombre) {
-  var info=document.getElementById('ne-puntos-info');
-  var txt=document.getElementById('ne-puntos-txt');
-  var btn=document.getElementById('ne-btn-canjear');
-  if(!info) return;
-  if(!nombre||nombre.length<2){info.style.display='none';return;}
-  var pts=getPuntos(nombre);
-  var umbral=db.config.ptosUmbral||100;
-  var pct=db.config.descuentoPct||10;
-  var bonos=Math.floor(pts/umbral);
-  if(pts<=0){info.style.display='none';return;}
-  info.style.display='';
-  if(bonos>0){
-    txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; '+bonos+' bono(s) de '+pct+'% disponible(s)';
-    btn.style.display='';
-  } else {
-    txt.innerHTML='&#x1F36B; <strong>'+pts+' Puntos Dulces</strong> &mdash; Faltan '+(umbral-(pts%umbral))+' pts para bono de '+pct+'%';
-    btn.style.display='none';
-  }
-}
-
 function canjearDescuento() {
   if(canjeAplicado){alert('Ya se aplic\u00F3 un descuento en esta venta.');return;}
   var nombre=document.getElementById('ne-cliente').value.trim();
@@ -1554,8 +1516,7 @@ function canjearDescuento() {
   db.puntos[key].total-=umbral;
   db.puntos[key].historial.push({pts:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
   saveDB();
-  var arr=[];Object.keys(db.puntos).forEach(function(k){var p=db.puntos[k];arr.push({clienteKey:k,nombre:p.nombre,total:p.total,historial:p.historial});});
-  sincronizar('savePuntos',arr);
+  sincronizar('addPuntosDelta',{clienteKey:key,nombre:db.puntos[key].nombre,delta:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
   var ptsTotalesActual=db.puntos[key]?db.puntos[key].total:0;
   var ptsGanadosEstimado=Math.floor((valDesc*(parseFloat(document.getElementById('ne-cantidad').value)||1))/1000)*(db.config.ptosPorMil||1);
   // Deshabilitar boton para un solo canje por venta
@@ -1625,9 +1586,8 @@ function agregarReferidoId(clienteId) {
 
 /* ===================== BOOT ===================== */
 loadDB();
-if(!db.config.gasUrl) db.config.gasUrl='https://script.google.com/macros/s/AKfycbxR-IGIY2-mW8H3J_jV15RmDUCYLaBJcbMk-iTXubyklgQL5a6OE6tkS6XgSdTfDS4Chw/exec';
-// Siempre usar la URL embedada en el HTML como respaldo
-if (!db.config.gasUrl) db.config.gasUrl = 'https://script.google.com/macros/s/AKfycbxR-IGIY2-mW8H3J_jV15RmDUCYLaBJcbMk-iTXubyklgQL5a6OE6tkS6XgSdTfDS4Chw/exec';
+// Fuente de verdad unica: la URL del HTML siempre tiene prioridad sobre localStorage
+db.config.gasUrl='https://script.google.com/macros/s/AKfycbzS0tGfbY3rjIcnw6ycDPeh9gbVoJIaSleYaVBW9AKoaPFrEpqfVQO4vzENawnRlI83-g/exec';
 // Restaurar sesion si existe
 (function() {
   try {
