@@ -826,7 +826,11 @@ function renderHistorial() {
   var tipo=document.getElementById('h-tipo').value;
   var filtered=db.recibos.filter(function(r){
     return(!desde||r.fecha>=desde)&&(!hasta||r.fecha<=hasta)&&(!tipo||r.tipo===tipo);
-  }).sort(function(a,b){return b.fecha.localeCompare(a.fecha);});
+  }).sort(function(a,b){
+    var tsDiff=(parseFloat(b.ts)||0)-(parseFloat(a.ts)||0);
+    if(tsDiff!==0) return tsDiff;
+    return b.fecha.localeCompare(a.fecha);
+  });
   var body=document.getElementById('historial-body');
   if(!filtered.length){body.innerHTML='<tr><td colspan="11" style="text-align:center;color:#a07040;padding:20px;">Sin registros</td></tr>';return;}
   var isAdmin=db.currentUser&&db.currentUser.rol==='admin';
