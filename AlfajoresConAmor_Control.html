@@ -200,6 +200,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
             </div>
           </div>
           <div class="form-group" id="ne-tel-group"><label>Tel&eacute;fono <small>(auto-registra cliente nuevo)</small></label><input type="text" id="ne-tel" placeholder="Ej: 3001234567"></div>
+          <div class="form-group" id="ne-nota-cliente-group"><label>Nota del cliente <small style="color:var(--text3);">(opcional)</small></label><input type="text" id="ne-nota-cliente" placeholder="Ej: arepas, curso marketing..."></div>
           <div class="form-group"><label>Responsable</label><input type="text" id="ne-responsable" readonly></div>
           <div class="form-group"><label>Notas (opcional)</label><textarea id="ne-notas" placeholder="Notas adicionales"></textarea></div>
           <div class="flex-end"><button class="btn btn-secondary" onclick="limpiarNE()">Limpiar</button><button class="btn btn-primary" id="btn-guardar" onclick="guardarRecibo()">Guardar &#x2713;</button></div>
@@ -593,6 +594,7 @@ function buscarClienteSugerencia(q) {
     item.onmousedown=function(){
       document.getElementById('ne-cliente').value=c.nombre;
       document.getElementById('ne-tel').value=c.tel||'';
+      document.getElementById('ne-nota-cliente').value=c.notas||'';
       currentNeClienteId=c.id||'';
       box.innerHTML='';
       mostrarPuntosCliente(c.nombre);
@@ -659,15 +661,20 @@ function guardarRecibo() {
   }
 
   if(tipo==='Venta'){
-    // Buscar cliente existente
+    // Buscar cliente existente: primero por id (autocomplete), luego por teléfono
     var clienteExist=null;
-    for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){clienteExist=db.clientes[i];break;}}
+    if(currentNeClienteId){
+      for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===currentNeClienteId){clienteExist=db.clientes[i];break;}}
+    }
+    if(!clienteExist&&tel){
+      for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].tel&&db.clientes[i].tel.replace(/\D/g,'')===tel){clienteExist=db.clientes[i];break;}}
+    }
     var localClienteId=currentNeClienteId||(clienteExist?clienteExist.id:Date.now().toString());
     var clienteObj={
       id:localClienteId,nombre:cliente,tel:tel,
       email:clienteExist?clienteExist.email||'':'',
       ciudad:clienteExist?clienteExist.ciudad||'':'',
-      notas:clienteExist?clienteExist.notas||'':'',
+      notas:document.getElementById('ne-nota-cliente').value.trim()||( clienteExist?clienteExist.notas||'':''),
       cumpleanos:clienteExist?clienteExist.cumpleanos||'':'',
       creadoPor:clienteExist?clienteExist.creadoPor||db.currentUser.nombre:db.currentUser.nombre,
       creadoEn:clienteExist?clienteExist.creadoEn||fechaHoy():fechaHoy(),
@@ -680,7 +687,7 @@ function guardarRecibo() {
       clienteObj.id=clienteId;
       var idx=-1;
       for(var j=0;j<db.clientes.length;j++){
-        if(db.clientes[j].id===clienteId||db.clientes[j].nombre.toLowerCase()===cliente.toLowerCase()){idx=j;break;}
+        if(db.clientes[j].id===clienteId||(tel&&db.clientes[j].tel&&db.clientes[j].tel.replace(/\D/g,'')===tel)){idx=j;break;}
       }
       if(idx>=0){db.clientes[idx]=clienteObj;}else{db.clientes.push(clienteObj);}
       // Sumar puntos con clienteId
@@ -795,6 +802,7 @@ function limpiarNE() {
   document.getElementById('ne-total').value='';
   document.getElementById('ne-cliente').value='';
   document.getElementById('ne-tel').value='';
+  document.getElementById('ne-nota-cliente').value='';
   document.getElementById('ne-notas').value='';
   document.getElementById('ne-producto').value='';
   document.getElementById('ne-pago').value='contado';
