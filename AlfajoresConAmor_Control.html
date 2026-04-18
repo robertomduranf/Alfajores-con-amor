@@ -336,16 +336,42 @@ function loadDB() {
 function doLogin() {
   var u = document.getElementById('li-user').value.trim();
   var p = document.getElementById('li-pass').value.trim();
-  var found = null;
-  for(var i=0;i<db.config.usuarios.length;i++){
-    var usr=db.config.usuarios[i];
-    if(usr.username.toLowerCase()===u.toLowerCase()&&usr.password===p){found=usr;break;}
+  if(!u||!p) return;
+  var btn=document.querySelector('.btn-login');
+  if(btn){btn.disabled=true;btn.textContent='Verificando...';}
+  var url=db.config.gasUrl||'';
+  function _validar(usuarios) {
+    var found=null;
+    for(var i=0;i<usuarios.length;i++){
+      var usr=usuarios[i];
+      if(usr.username.toLowerCase()===u.toLowerCase()&&usr.password===p){found=usr;break;}
+    }
+    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
+    if(found){
+      // Actualizar lista local con la que vino de Sheets
+      db.config.usuarios=usuarios;
+      saveDB();
+      document.getElementById('login-error').style.display='none';
+      loginAs(found);
+    } else {
+      document.getElementById('login-error').style.display='block';
+    }
   }
-  if(found){
-    document.getElementById('login-error').style.display='none';
-    loginAs(found);
+  if(url){
+    fetch(url+'?accion=getUsuarios',{method:'GET',redirect:'follow'})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.status==='ok'&&d.usuarios&&d.usuarios.length){
+          _validar(d.usuarios);
+        } else {
+          _validar(db.config.usuarios); // fallback local
+        }
+      })
+      .catch(function(){
+        _validar(db.config.usuarios); // sin conexión: usar local
+      });
   } else {
-    document.getElementById('login-error').style.display='block';
+    _validar(db.config.usuarios);
   }
 }
 document.getElementById('li-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
