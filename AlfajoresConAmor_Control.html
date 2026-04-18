@@ -654,7 +654,7 @@ function guardarRecibo() {
         window._tempWaMsg=msgCanje;window._tempWaTel=telCanje;
         document.getElementById('modal-wa').classList.add('open');
       } else {
-        var ptsT=getPuntos(cliente);
+        var ptsT=getPuntos(cliente, currentNeClienteId||'');
         mostrarWaModal(cliente||'Cliente',tel,desc,total,pts,ptsT);
       }
     }
@@ -818,7 +818,7 @@ function limpiarNE() {
 /* ===================== PUNTOS ===================== */
 function sumarPuntos(clienteNombre, pts, motivo, clienteId) {
   if(!clienteNombre || pts<=0) return;
-  var key=clienteNombre.toLowerCase();
+  var key=clienteId||clienteNombre.toLowerCase();
   if(!db.puntos) db.puntos={};
   if(!db.puntos[key]) db.puntos[key]={nombre:clienteNombre,total:0,historial:[]};
   db.puntos[key].total += pts;
@@ -827,14 +827,16 @@ function sumarPuntos(clienteNombre, pts, motivo, clienteId) {
   sincronizar('addPuntosDelta',{clienteId:clienteId||'',clienteKey:key,nombre:clienteNombre,delta:pts,motivo:motivo,fecha:fechaHoy()});
 }
 
-function getPuntos(clienteNombre) {
-  var key=clienteNombre.toLowerCase();
+function getPuntos(clienteNombre, clienteId) {
+  var key=clienteId||clienteNombre.toLowerCase();
   return db.puntos[key]?db.puntos[key].total:0;
 }
 
 function enviarMsgPuntos(clienteNombre) {
-  var key=clienteNombre.toLowerCase();
-  var pts=getPuntos(clienteNombre);
+  var cid='';
+  for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===clienteNombre.toLowerCase()){cid=db.clientes[i].id;break;}}
+  var key=cid||clienteNombre.toLowerCase();
+  var pts=getPuntos(clienteNombre,cid);
   var umbral=db.config.ptosUmbral||100;
   if(pts<umbral){alert('El cliente aun no alcanza el umbral de '+umbral+' puntos.');return;}
   var c=null;
@@ -1081,7 +1083,7 @@ function renderCRM() {
   var umbral=db.config.ptosUmbral||100;
   var html='';
   filtered.forEach(function(c){
-    var pts=getPuntos(c.nombre);
+    var pts=getPuntos(c.nombre, c.id);
     var ptsBar=Math.min(100,Math.round(pts/umbral*100));
     var ptsBono=isAdmin()&&pts>=umbral?'<button class="btn btn-primary btn-sm" onclick="enviarMsgPuntosId(\''+c.id+'\')">&#x1F381; Bono WA</button>':'';
     var notaInline=c.notas?'<span style="font-weight:400;color:#a07040;font-size:.88rem;"> ('+c.notas+')</span>':'';
@@ -1129,7 +1131,7 @@ function exportarContactosCSV() {
       c.ciudad||'',
       c.notas||'',
       c.cumpleanos||'',
-      getPuntos(c.nombre)
+      getPuntos(c.nombre, c.id)
     ]);
   });
   var csv=filas.map(function(r){
@@ -1674,8 +1676,8 @@ function cargarDesdeSheets(cb, _localPendientes) {
       if (data.puntos && data.puntos.length) {
         db.puntos = {};
         data.puntos.forEach(function(p) {
-          var rawKey = String(p.clienteKey || '');
-          var key = (!rawKey || !isNaN(rawKey)) ? String(p.nombre || '').toLowerCase() : rawKey.toLowerCase();
+          var rawKey = String(p.clienteId || p.clienteKey || '');
+          var key = (rawKey && isNaN(rawKey)) ? rawKey : String(p.nombre || '').toLowerCase();
           if (!key) return;
           var historial = [];
           try {
@@ -1769,7 +1771,8 @@ function mostrarPuntosCliente(nombre) {
   var btn=document.getElementById('ne-btn-canjear');
   if(!info) return;
   if(!nombre||nombre.length<2){info.style.display='none';return;}
-  var pts=getPuntos(nombre);
+  var cid=currentNeClienteId||'';
+  var pts=getPuntos(nombre,cid);
   var umbral=db.config.ptosUmbral||100;
   var pct=db.config.descuentoPct||10;
   var bonos=Math.floor(pts/umbral);
@@ -1787,7 +1790,7 @@ function mostrarPuntosCliente(nombre) {
 function canjearDescuento() {
   if(canjeAplicado){alert('Ya se aplic\u00F3 un descuento en esta venta.');return;}
   var nombre=document.getElementById('ne-cliente').value.trim();
-  var pts=getPuntos(nombre);
+  var pts=getPuntos(nombre,currentNeClienteId||'');
   var umbral=db.config.ptosUmbral||100;
   var pct=db.config.descuentoPct||10;
   if(pts<umbral){alert('El cliente no tiene suficientes puntos.');return;}
@@ -1796,7 +1799,7 @@ function canjearDescuento() {
   var valDesc=Math.round(val*(1-pct/100));
   document.getElementById('ne-valor').value=valDesc;
   calcTotal();
-  var key=nombre.toLowerCase();
+  var key=currentNeClienteId||nombre.toLowerCase();
   if(!db.puntos[key]) return;
   db.puntos[key].total-=umbral;
   db.puntos[key].historial.push({pts:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
