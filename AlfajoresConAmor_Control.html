@@ -380,6 +380,8 @@ document.getElementById('li-user').addEventListener('keydown',function(e){if(e.k
 function loginAs(user) {
   db.currentUser=user;
   localStorage.setItem('aca_session', JSON.stringify(user));
+  // Rescatar recibos LOCAL pendientes ANTES de limpiar
+  var _localPendientes=db.recibos.filter(function(r){return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;});
   localStorage.removeItem('aca_recibos'); localStorage.removeItem('aca_clientes');
   localStorage.removeItem('aca_productos'); localStorage.removeItem('aca_deudores');
   localStorage.removeItem('aca_puntos'); localStorage.removeItem('aca_gastosFijos');
@@ -395,7 +397,7 @@ function loginAs(user) {
     initApp();
     checkAlertasCobro();
     checkAlertasCumple();
-  });
+  }, _localPendientes);
 }
 
 function doLogout() {
@@ -690,19 +692,48 @@ function guardarRecibo() {
         fetch(url+params,{method:'GET',redirect:'follow'})
           .then(function(r){return r.json();})
           .then(function(d){
-            if(d.status==='ok'&&d.recibo) rec.recibo=d.recibo;
-            db.recibos.push(rec);
-            if(pago==='credito'){
-              db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
-              sincronizar('saveDeudor',db.deudores);
+            if(d.status==='ok'&&d.recibo){
+              rec.recibo=d.recibo;
+              db.recibos.push(rec);
+              if(pago==='credito'){
+                db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
+                sincronizar('saveDeudor',db.deudores);
+              }
+              saveDB();
+              _afterSave(clienteId);
+            } else {
+              // Servidor respondió con error — reintento automático en 3 segundos
+              if(btnG) btnG.textContent='Reintentando...';
+              setTimeout(function(){
+                fetch(url+params,{method:'GET',redirect:'follow'})
+                  .then(function(r2){return r2.json();})
+                  .then(function(d2){
+                    if(d2.status==='ok'&&d2.recibo) rec.recibo=d2.recibo;
+                    else rec.recibo='LOCAL-'+Date.now();
+                    db.recibos.push(rec);
+                    if(pago==='credito'){
+                      db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
+                      sincronizar('saveDeudor',db.deudores);
+                    }
+                    saveDB();
+                    if(rec.recibo.indexOf('LOCAL')===0) alert('\u26A0\uFE0F Guardado solo localmente. Verifica en Sheets o vuelve a intentarlo.');
+                    _afterSave(clienteId);
+                  }).catch(function(){
+                    rec.recibo='LOCAL-'+Date.now();
+                    db.recibos.push(rec);
+                    saveDB();
+                    alert('\u26A0\uFE0F Sin conexi\u00F3n. Guardado solo localmente. Presiona \uD83D\uDD04 para sincronizar.');
+                    if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+                    renderResumenHoy();renderUltimas();
+                  });
+              },3000);
             }
-            saveDB();
-            _afterSave(clienteId);
           }).catch(function(){
             rec.recibo='LOCAL-'+Date.now();
             db.recibos.push(rec);
             if(pago==='credito') db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
             saveDB();
+            alert('\u26A0\uFE0F Sin conexi\u00F3n. Guardado solo localmente. Presiona \uD83D\uDD04 para sincronizar.');
             if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
             renderResumenHoy();renderUltimas();
           });
@@ -1583,14 +1614,16 @@ loginAs = function(user) {
 
 
 /* ===================== CARGAR DESDE SHEETS ===================== */
-function cargarDesdeSheets(cb) {
+function cargarDesdeSheets(cb, _localPendientes) {
   var url = db.config.gasUrl || '';
   if (!url) { if(cb) cb(false); return; }
   fetch(url + '?accion=getAll', { method:'GET', redirect:'follow' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.status !== 'ok') { if(cb) cb(false); return; }
-      if (data.recibos && data.recibos.length) db.recibos = data.recibos.map(function(r) {
+      if (data.recibos && data.recibos.length) {
+        var pendientes=Array.isArray(_localPendientes)?_localPendientes:[];
+        db.recibos = data.recibos.map(function(r) {
         // Fix fecha: Sheets may return Date object or timestamp string
         var fecha = r.fecha;
         if (fecha && String(fecha).indexOf('T') >= 0) fecha = String(fecha).split('T')[0];
@@ -1605,7 +1638,13 @@ function cargarDesdeSheets(cb) {
           notas: String(r.notas||''), pago: String(r.pago||'contado'),
           fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0
         };
-      });
+        });
+        // Reincorporar locales que no llegaron a Sheets
+        var sheetsIds=db.recibos.map(function(r){return r.id;});
+        var noSync=pendientes.filter(function(r){return sheetsIds.indexOf(r.id)<0;});
+        noSync.forEach(function(r){db.recibos.push(r);});
+        if(noSync.length>0) alert('\u26A0\uFE0F Hay '+noSync.length+' registro(s) guardados localmente que no llegaron a Sheets. Presiona \uD83D\uDD04 para reintentar la sincronizaci\u00F3n.');
+      }
       if (data.productos && data.productos.length) db.productos = data.productos.map(function(p){
         return { id:String(p.id), nombre:String(p.nombre), precio:parseFloat(p.precio)||0, costo:parseFloat(p.costo)||0, categoria:String(p.categoria||''), descripcion:String(p.descripcion||'') };
       });
@@ -1686,11 +1725,12 @@ function fechaHoy() {
 function actualizarDatos() {
   var btn=document.querySelector('[onclick="actualizarDatos()"]');
   if(btn) btn.textContent='\u23F3';
+  var _pend=db.recibos.filter(function(r){return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;});
   cargarDesdeSheets(function(ok){
     if(btn) btn.textContent='\uD83D\uDD04';
     if(ok){renderResumenHoy();renderUltimas();renderProductosSelect();}
     alert(ok?'Datos actualizados \u2713':'Sin conexi\u00F3n, usando datos locales');
-  });
+  }, _pend);
 }
 
 function mostrarPuntosCliente(nombre) {
