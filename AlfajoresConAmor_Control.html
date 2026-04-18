@@ -224,7 +224,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
     <div class="tab-pane" id="tab-graficas"><div class="grid-2"><div class="card"><h3>&#x1F4C8; Ventas vs Gastos</h3><div class="chart-wrap"><canvas id="chart-vg"></canvas></div></div><div class="card"><h3>&#x1F9C1; Top Productos</h3><div class="chart-wrap"><canvas id="chart-prod"></canvas></div></div><div class="card"><h3>&#x1F4C5; Ventas por D&iacute;a</h3><div class="chart-wrap"><canvas id="chart-dia"></canvas></div></div><div class="card"><h3>&#x1F4B3; Distribuci&oacute;n</h3><div class="chart-wrap"><canvas id="chart-tipo"></canvas></div></div></div></div>
     <div class="tab-pane" id="tab-pyg"><div class="card"><h3>&#x1F4B0; P&amp;G</h3><div class="grid-2" style="margin-bottom:14px;"><div class="form-group mb-0"><label>Desde</label><input type="date" id="pyg-desde"></div><div class="form-group mb-0"><label>Hasta</label><input type="date" id="pyg-hasta"></div></div><button class="btn btn-primary" onclick="calcPyG()" style="margin-bottom:16px;">Calcular</button><div id="pyg-resultado"></div></div></div>
     <div class="tab-pane" id="tab-balance"><div class="card"><h3>&#x2696;&#xFE0F; Balance General</h3><div class="form-group" style="max-width:200px;"><label>A&ntilde;o</label><input type="number" id="bal-anio" value="2025"></div><button class="btn btn-primary" onclick="calcBalance()" style="margin-bottom:16px;">Calcular</button><div id="balance-resultado"></div></div></div>
-    <div class="tab-pane" id="tab-agregar-cliente"><div class="card" style="max-width:500px;"><h3>&#x2795; Agregar / Editar Cliente</h3><input type="hidden" id="ac-id"><div class="form-group"><label>Nombre</label><input type="text" id="ac-nombre" placeholder="Nombre completo"></div><div class="form-group"><label>Tel&eacute;fono</label><input type="text" id="ac-tel" placeholder="Ej: 3001234567"></div><div class="form-group"><label>Email</label><input type="email" id="ac-email" placeholder="correo@ejemplo.com"></div><div class="form-group"><label>Ciudad</label><input type="text" id="ac-ciudad" placeholder="Ciudad"></div><div class="form-group"><label>Notas</label><textarea id="ac-notas" placeholder="Notas sobre el cliente"></textarea></div><div class="flex-end"><button class="btn btn-secondary" onclick="limpiarCliente()">Limpiar</button><button class="btn btn-primary" onclick="guardarCliente()">Guardar &#x2713;</button></div></div></div>
+    <div class="tab-pane" id="tab-agregar-cliente"><div class="card" style="max-width:500px;"><h3>&#x2795; Agregar / Editar Cliente</h3><input type="hidden" id="ac-id"><div class="form-group"><label>Nombre</label><input type="text" id="ac-nombre" placeholder="Nombre completo"></div><div class="form-group"><label>Tel&eacute;fono</label><input type="text" id="ac-tel" placeholder="Ej: 3001234567"></div><div class="form-group"><label>Email</label><input type="email" id="ac-email" placeholder="correo@ejemplo.com"></div><div class="form-group"><label>Ciudad</label><input type="text" id="ac-ciudad" placeholder="Ciudad"></div><div class="form-group"><label>Notas</label><textarea id="ac-notas" placeholder="Notas sobre el cliente"></textarea></div><div class="form-group"><label>Cumplea&ntilde;os <small style="color:var(--text3);">(DD/MM o DD/MM/AAAA)</small></label><input type="text" id="ac-cumpleanos" placeholder="Ej: 15/03 o 15/03/1990" maxlength="10"><small>D&iacute;a y mes son obligatorios, a&ntilde;o es opcional.</small></div><div class="flex-end"><button class="btn btn-secondary" onclick="limpiarCliente()">Limpiar</button><button class="btn btn-primary" onclick="guardarCliente()">Guardar &#x2713;</button></div></div></div>
     <div class="tab-pane" id="tab-crm"><div class="card"><h3>&#x1F465; CRM &mdash; Clientes &amp; Puntos Dulces</h3><div class="form-group" style="max-width:320px;margin-bottom:14px;"><input type="text" id="crm-buscar" placeholder="Buscar cliente..." oninput="renderCRM()"></div><div id="crm-lista"></div></div></div>
     <div class="tab-pane" id="tab-postventa"><div class="card"><h3>&#x1F4AC; Postventa</h3><p style="color:#6b4226;font-size:.9rem;margin-bottom:16px;">Clientes que han comprado y a&uacute;n no han recibido el mensaje de postventa.</p><div class="form-group" style="max-width:320px;margin-bottom:14px;"><input type="text" id="pv-buscar" placeholder="Buscar cliente..." oninput="renderPostventa()"></div><div id="postventa-lista"></div></div></div>
     <div class="tab-pane" id="tab-ejecutivo"><div class="card"><h3>&#x1F3C6; Resumen Ejecutivo</h3><div class="form-group" style="max-width:160px;margin-bottom:14px;"><label>A&ntilde;o</label><input type="number" id="ej-anio" value="2025"></div><button class="btn btn-primary" onclick="calcEjecutivo()" style="margin-bottom:16px;">Generar</button><div id="ejecutivo-resultado"></div></div></div>
@@ -238,6 +238,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group"><label>Mensaje Puntos Dulces</label><textarea id="cfg-wapuntos" rows="3"></textarea><small>Variables: {nombre} {puntos} {descuento} {fecha}</small></div>
           <div class="form-group"><label>Mensaje Postventa</label><textarea id="cfg-wapostventa" rows="3"></textarea><small>Variable: {nombre}</small></div>
           <div class="form-group"><label>Mensaje Canje de Puntos</label><textarea id="cfg-wacanje" rows="4"></textarea><small>Variables: {nombre} {totalAntes} {descuento} {totalDespues} {ptsCanjeados} {ptsTotales}</small></div>
+          <div class="form-group"><label>Mensaje Cumplea&ntilde;os</label><textarea id="cfg-wacumple" rows="3"></textarea><small>Variable: {nombre}</small></div>
           <button class="btn btn-primary" onclick="guardarWaConfig()">Guardar Mensajes WA</button>
         </div>
         <div class="card"><h3>&#x1F36B; Puntos Dulces</h3>
@@ -260,6 +261,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
 <div class="modal-overlay" id="modal-usuario"><div class="modal"><h3 id="modal-usr-title">Usuario</h3><input type="hidden" id="mu-id"><div class="form-group"><label>Nombre completo</label><input type="text" id="mu-nombre"></div><div class="form-group"><label>Username</label><input type="text" id="mu-username"></div><div class="form-group"><label>Contrase&ntilde;a</label><input type="password" id="mu-pass"></div><div class="form-group"><label>Rol</label><select id="mu-rol"><option value="vendedor">Vendedor</option><option value="admin">Administrador</option></select></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-usuario')">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modal-wa"><div class="modal wa-modal"><div class="wa-icon">&#x1F4AC;</div><h3>&iexcl;Venta registrada!</h3><p>&iquest;Enviar mensaje a <strong id="wa-nombre-display">&mdash;</strong>?</p><div class="wa-preview" id="wa-preview-msg"></div><div class="modal-footer" style="justify-content:center;gap:14px;"><button class="btn btn-secondary" onclick="cerrarModal('modal-wa')">Omitir</button><button class="btn btn-wa" onclick="abrirWhatsApp()">&#x1F4F1; Abrir WhatsApp</button></div></div></div>
 <div class="modal-overlay" id="modal-alerta-cobro"><div class="modal"><h3>&#x23F0; Cobros para ma&ntilde;ana</h3><p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes tienen pagos programados para ma&ntilde;ana.</p><div id="alerta-cobro-lista"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-alerta-cobro')">Cerrar</button></div></div></div>
+<div class="modal-overlay" id="modal-alerta-cumple"><div class="modal"><h3>&#x1F382; Cumplea&ntilde;os hoy</h3><p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes cumplen a&ntilde;os hoy.</p><div id="alerta-cumple-lista"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-alerta-cumple')">Cerrar</button></div></div></div>
 
 <script>
 var db = {
@@ -270,20 +272,19 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbzS0tGfbY3rjIcnw6ycDPeh9gbVoJIaSleYaVBW9AKoaPFrEpqfVQO4vzENawnRlI83-g/exec', // sobreescrita en el boot — editar solo ahi
+    gasUrl: 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec', // sobreescrita en el boot — editar solo ahi
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
     waMsgCanje: 'Hola {nombre}, aplicamos un descuento del {descuento}% en tu compra! Valor antes: ${totalAntes}, con descuento: ${totalDespues}. Canjeaste {ptsCanjeados} Puntos Dulces y te quedan {ptsTotales} pts.',
     waMsgPostventa: 'Hola {nombre}, \u00BFqu\u00e9 tal te parecieron los Alfajores? Esperamos que los hayas disfrutado much\u00edsimo \uD83E\uDDC1 Tu opini\u00f3n es muy importante para nosotros.',
     waMsgPuntos: 'Hola {nombre}, tienes acumulado {puntos} Puntos Dulces \uD83C\uDF6B \u00A1Has ganado un bono descuento de {descuento}% disponible hasta {fecha}! No te lo pierdas, \u00FAs\u00E1lo en tu pr\u00F3xima compra. \uD83E\uDDC1',
+    waMsgCumpleanos: 'Hola {nombre}, \u00A1en Alfajores con Amor te deseamos un muy feliz cumplea\u00F1os! \uD83C\uDF82\uD83E\uDDC1 Que lo pases incre\u00EDble, te tenemos una sorpresita especial.',
     ptosPorMil: 1,
     ptosReferido: 50,
     ptosUmbral: 100,
     descuentoPct: 10,
     bonoDias: 30,
-    consec1: 1,
-    consec2: 1,
     usuarios: [
       {id:'u1',nombre:'Katherine',username:'Katherine',password:'1818',rol:'admin'},
       {id:'u2',nombre:'Roberto',username:'Roberto',password:'1313',rol:'admin'}
@@ -295,6 +296,7 @@ var db = {
 var waCurrentTel = '';
 var waCurrentNombre = '';
 var charts = {};
+var currentNeClienteId = ''; // Id del cliente seleccionado en Nueva Entrada
 
 function saveDB() {
   try {
@@ -366,6 +368,7 @@ function loginAs(user) {
     applyRoleUI(user.rol);
     initApp();
     checkAlertasCobro();
+    checkAlertasCumple();
   });
 }
 
@@ -387,6 +390,8 @@ function applyRoleUI(rol) {
   });
 }
 
+function isAdmin() { return !!(db.currentUser && db.currentUser.rol==='admin'); }
+
 /* ===================== ALERTAS COBRO ===================== */
 function checkAlertasCobro() {
   var manana = new Date();
@@ -397,11 +402,42 @@ function checkAlertasCobro() {
   var lista = pendientes.map(function(d){
     return '<div style="padding:10px;background:#fff9f0;border-radius:8px;border-left:4px solid #824913;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">'
       +'<div><strong>'+d.clienteNombre+'</strong><br><small>Cobro: '+d.fechaCobro+' &mdash; $'+fmt(d.valor)+'</small></div>'
-      +'<button class="btn btn-wa btn-sm" onclick="waCobroDirecto(\''+d.id+'\')">&#x1F4AC; WA</button>'
+      +(isAdmin()?'<button class="btn btn-wa btn-sm" onclick="waCobroDirecto(\''+d.id+'\')">&#x1F4AC; WA</button>':'')
       +'</div>';
   }).join('');
   document.getElementById('alerta-cobro-lista').innerHTML=lista;
   document.getElementById('modal-alerta-cobro').classList.add('open');
+}
+
+function checkAlertasCumple() {
+  var hoy=new Date();
+  var dd=String(hoy.getDate()).padStart(2,'0');
+  var mm=String(hoy.getMonth()+1).padStart(2,'0');
+  var cumpleaneros=db.clientes.filter(function(c){
+    if(!c.cumpleanos) return false;
+    var p=c.cumpleanos.split('/');
+    if(p.length<2) return false;
+    return p[0].padStart(2,'0')===dd && p[1].padStart(2,'0')===mm;
+  });
+  if(!cumpleaneros.length) return;
+  var lista=cumpleaneros.map(function(c){
+    var waBtn=isAdmin()&&c.tel?'<button class="btn btn-wa btn-sm" onclick="waCumpleanos(\''+c.id+'\')">&#x1F4AC; WA</button>':'';
+    return '<div style="padding:10px;background:#fff9f0;border-radius:8px;border-left:4px solid #e8a020;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">'
+      +'<div><strong>'+c.nombre+'</strong>'+(c.cumpleanos?' <small style="color:#a07040;">'+c.cumpleanos+'</small>':'')+'</div>'
+      +waBtn+'</div>';
+  }).join('');
+  document.getElementById('alerta-cumple-lista').innerHTML=lista;
+  document.getElementById('modal-alerta-cumple').classList.add('open');
+}
+
+function waCumpleanos(clienteId) {
+  var c=null;
+  for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===clienteId){c=db.clientes[i];break;}}
+  if(!c||!c.tel) return;
+  var msg=(db.config.waMsgCumpleanos||'Hola {nombre}, \u00A1feliz cumplea\u00F1os! \uD83C\uDF82')
+    .replace(/\{nombre\}/g,c.nombre);
+  var tel=(db.config.waPrefijo||'57')+c.tel.replace(/\D/g,'');
+  window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msg),'_blank');
 }
 
 function waCobroDirecto(deudorId) {
@@ -521,12 +557,13 @@ function buscarClienteSugerencia(q) {
   found.forEach(function(c){
     var item=document.createElement('div');
     item.style.cssText='padding:8px 12px;cursor:pointer;font-size:.9rem;';
-    item.textContent=c.nombre+(c.tel?' \u00B7 '+c.tel:'');
+    var notaAc=c.notas?' ('+c.notas+')':'';
+    item.textContent=c.nombre+(c.tel?' \u00B7 '+c.tel:'')+notaAc;
     item.onmousedown=function(){
       document.getElementById('ne-cliente').value=c.nombre;
       document.getElementById('ne-tel').value=c.tel||'';
+      currentNeClienteId=c.id||'';
       box.innerHTML='';
-      mostrarPuntosCliente(c.nombre);
       mostrarPuntosCliente(c.nombre);
     };
     div.appendChild(item);
@@ -555,65 +592,137 @@ function guardarRecibo() {
   if(!fecha||!desc||valor<=0){alert('Completa fecha, descripci\u00F3n y valor.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}return;}
   if(pago==='credito'&&!fechaCobro){alert('Ingresa la fecha de cobro.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}return;}
   if(tipo==='Venta'&&!cliente){alert('Ingresa el nombre del cliente.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}return;}
-  if(tipo==='Venta'&&cliente&&tel){
-    var exists=false;
-    for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){exists=true;break;}}
-    if(!exists) db.clientes.push({id:Date.now().toString(),nombre:cliente,tel:tel,email:'',ciudad:'',notas:''});
-  }
-  var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,recibo:'',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
-  if(tipo==='Venta'&&cliente){var pts=Math.floor(total/1000)*(db.config.ptosPorMil||1);if(pts>0)sumarPuntos(cliente,pts,'Compra: '+desc);}
-  // Capturar estado del canje ANTES del fetch para que limpiarNE() no lo borre
+  // Capturar canje ANTES de limpiarNE
   var localCanjeAplicado=canjeAplicado;
   var localCanjeData=canjeAplicado?{nombre:canjeData.nombre,pct:canjeData.pct,totalAntes:canjeData.totalAntes,totalDespues:canjeData.totalDespues,ptsCanjeados:canjeData.ptsCanjeados,ptsTotales:canjeData.ptsTotales,ptsGanados:canjeData.ptsGanados}:{};
   var url=db.config.gasUrl||'';
-  if(url){
-    var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
-    fetch(url+params,{method:'GET',redirect:'follow'})
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if(d.status==='ok'&&d.recibo) rec.recibo=d.recibo;
-        db.recibos.push(rec);
-        if(tipo==='Venta'&&pago==='credito') db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
-        saveDB();
-        if(tipo==='Venta'){
-          sincronizar('saveCliente',db.clientes);
-          if(pago==='credito') sincronizar('saveDeudor',db.deudores);
-        }
-        renderResumenHoy(); renderUltimas();
-        if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
-        if(tipo==='Venta'&&tel&&pago==='contado'){
-          if(localCanjeAplicado && localCanjeData.nombre) {
-            // Mensaje de canje
-            var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
-              .replace(/\{nombre\}/g, localCanjeData.nombre)
-              .replace(/\{descuento\}/g, localCanjeData.pct)
-              .replace(/\{totalAntes\}/g, fmt(localCanjeData.totalAntes))
-              .replace(/\{totalDespues\}/g, fmt(localCanjeData.totalDespues))
-              .replace(/\{ptsCanjeados\}/g, localCanjeData.ptsCanjeados)
-              .replace(/\{ptsGanados\}/g, localCanjeData.ptsGanados||0)
-              .replace(/\{ptsTotales\}/g, (localCanjeData.ptsTotales||0) + (localCanjeData.ptsGanados||0));
-            var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
-            document.getElementById('wa-nombre-display').textContent=localCanjeData.nombre;
-            document.getElementById('wa-preview-msg').textContent=msgCanje;
-            waCurrentTel=tel; waCurrentNombre=canjeData.nombre;
-            waCurrentProducto=''; waCurrentTotal=0; waCurrentPtsG=0; waCurrentPtsT=0;
-            // Override abrirWhatsApp for this modal open
-            window._tempWaMsg=msgCanje; window._tempWaTel=telCanje;
-            document.getElementById('modal-wa').classList.add('open');
-          } else {
-            var ptsG=Math.floor(total/1000)*(db.config.ptosPorMil||1);
-            var ptsT=getPuntos(cliente);
-            mostrarWaModal(cliente||'Cliente',tel,desc,total,ptsG,ptsT);
-          }
-        }
-      }).catch(function(){
-        rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();
-        renderResumenHoy();renderUltimas();
-        if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
-      });
-  } else {
-    rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();renderResumenHoy();renderUltimas();
+  var pts=tipo==='Venta'&&cliente?Math.floor(total/1000)*(db.config.ptosPorMil||1):0;
+
+  // Muestra modal WA después de guardar (solo admin)
+  function _afterSave(clienteId) {
+    renderResumenHoy(); renderUltimas();
     if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+    if(isAdmin()&&tipo==='Venta'&&tel&&pago==='contado'){
+      if(localCanjeAplicado&&localCanjeData.nombre){
+        var msgCanje=(db.config.waMsgCanje||'Hola {nombre}, aplicamos {descuento}% descuento! Antes: ${totalAntes}, ahora: ${totalDespues}. Canjeaste {ptsCanjeados} pts, te quedan {ptsTotales}.')
+          .replace(/\{nombre\}/g,localCanjeData.nombre)
+          .replace(/\{descuento\}/g,localCanjeData.pct)
+          .replace(/\{totalAntes\}/g,fmt(localCanjeData.totalAntes))
+          .replace(/\{totalDespues\}/g,fmt(localCanjeData.totalDespues))
+          .replace(/\{ptsCanjeados\}/g,localCanjeData.ptsCanjeados)
+          .replace(/\{ptsGanados\}/g,localCanjeData.ptsGanados||0)
+          .replace(/\{ptsTotales\}/g,(localCanjeData.ptsTotales||0)+(localCanjeData.ptsGanados||0));
+        var telCanje=(db.config.waPrefijo||'57')+tel.replace(/\D/g,'');
+        document.getElementById('wa-nombre-display').textContent=localCanjeData.nombre;
+        document.getElementById('wa-preview-msg').textContent=msgCanje;
+        waCurrentTel=tel;waCurrentNombre=localCanjeData.nombre;
+        waCurrentProducto='';waCurrentTotal=0;waCurrentPtsG=0;waCurrentPtsT=0;
+        window._tempWaMsg=msgCanje;window._tempWaTel=telCanje;
+        document.getElementById('modal-wa').classList.add('open');
+      } else {
+        var ptsT=getPuntos(cliente);
+        mostrarWaModal(cliente||'Cliente',tel,desc,total,pts,ptsT);
+      }
+    }
+  }
+
+  if(tipo==='Venta'){
+    // Buscar cliente existente
+    var clienteExist=null;
+    for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){clienteExist=db.clientes[i];break;}}
+    var localClienteId=currentNeClienteId||(clienteExist?clienteExist.id:Date.now().toString());
+    var clienteObj={
+      id:localClienteId,nombre:cliente,tel:tel,
+      email:clienteExist?clienteExist.email||'':'',
+      ciudad:clienteExist?clienteExist.ciudad||'':'',
+      notas:clienteExist?clienteExist.notas||'':'',
+      cumpleanos:clienteExist?clienteExist.cumpleanos||'':'',
+      creadoPor:clienteExist?clienteExist.creadoPor||db.currentUser.nombre:db.currentUser.nombre,
+      creadoEn:clienteExist?clienteExist.creadoEn||fechaHoy():fechaHoy(),
+      editadoPor:db.currentUser.nombre,
+      editadoEn:fechaHoy()
+    };
+
+    var _finalizarVenta=function(clienteId){
+      // Actualizar db.clientes local
+      clienteObj.id=clienteId;
+      var idx=-1;
+      for(var j=0;j<db.clientes.length;j++){
+        if(db.clientes[j].id===clienteId||db.clientes[j].nombre.toLowerCase()===cliente.toLowerCase()){idx=j;break;}
+      }
+      if(idx>=0){db.clientes[idx]=clienteObj;}else{db.clientes.push(clienteObj);}
+      // Sumar puntos con clienteId
+      if(pts>0) sumarPuntos(cliente,pts,'Compra: '+desc,clienteId);
+      // Construir recibo con clienteId
+      var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,
+        clienteId:clienteId,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,
+        recibo:'',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
+      if(url){
+        var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
+        fetch(url+params,{method:'GET',redirect:'follow'})
+          .then(function(r){return r.json();})
+          .then(function(d){
+            if(d.status==='ok'&&d.recibo) rec.recibo=d.recibo;
+            db.recibos.push(rec);
+            if(pago==='credito'){
+              db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
+              sincronizar('saveDeudor',db.deudores);
+            }
+            saveDB();
+            _afterSave(clienteId);
+          }).catch(function(){
+            rec.recibo='LOCAL-'+Date.now();
+            db.recibos.push(rec);
+            if(pago==='credito') db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
+            saveDB();
+            if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+            renderResumenHoy();renderUltimas();
+          });
+      } else {
+        rec.recibo='LOCAL-'+Date.now();
+        db.recibos.push(rec);
+        if(pago==='credito') db.deudores.push({id:'d'+Date.now(),reciboId:rec.id,clienteId:clienteId,clienteNombre:cliente,tel:tel,valor:total,fechaCobro:fechaCobro,estado:'pendiente',ts:Date.now()});
+        saveDB();
+        if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+        renderResumenHoy();renderUltimas();
+      }
+    };
+
+    if(url){
+      var cp='?accion=saveClienteUno&data='+encodeURIComponent(JSON.stringify(clienteObj));
+      fetch(url+cp,{method:'GET',redirect:'follow'})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          var cid=(d.status==='ok'&&d.clienteId)?d.clienteId:localClienteId;
+          _finalizarVenta(cid);
+        }).catch(function(){_finalizarVenta(localClienteId);});
+    } else {
+      _finalizarVenta(localClienteId);
+    }
+  } else {
+    // Gasto / Pago Deuda — sin cliente
+    var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,
+      clienteId:'',cliente:'',tel:'',responsable:db.currentUser.nombre,
+      recibo:'',notas:notas,pago:'contado',fechaCobro:'',ts:Date.now()};
+    if(url){
+      var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
+      fetch(url+params,{method:'GET',redirect:'follow'})
+        .then(function(r){return r.json();})
+        .then(function(d){
+          if(d.status==='ok'&&d.recibo) rec.recibo=d.recibo;
+          db.recibos.push(rec);saveDB();
+          renderResumenHoy();renderUltimas();
+          if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+        }).catch(function(){
+          rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();
+          renderResumenHoy();renderUltimas();
+          if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+        });
+    } else {
+      rec.recibo='LOCAL-'+Date.now();db.recibos.push(rec);saveDB();
+      renderResumenHoy();renderUltimas();
+      if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
+    }
   }
   limpiarNE();
 }
@@ -630,13 +739,14 @@ function limpiarNE() {
   document.getElementById('ne-pago').value='contado';
   document.getElementById('ne-fechacobro').value='';
   var pinfo=document.getElementById('ne-puntos-info');if(pinfo)pinfo.style.display='none';
+  currentNeClienteId='';
   canjeAplicado=false;canjeData={};
   onPagoChange();
   actualizarConsecutivo();
 }
 
 /* ===================== PUNTOS ===================== */
-function sumarPuntos(clienteNombre, pts, motivo) {
+function sumarPuntos(clienteNombre, pts, motivo, clienteId) {
   if(!clienteNombre || pts<=0) return;
   var key=clienteNombre.toLowerCase();
   if(!db.puntos) db.puntos={};
@@ -644,7 +754,7 @@ function sumarPuntos(clienteNombre, pts, motivo) {
   db.puntos[key].total += pts;
   db.puntos[key].historial.push({pts:pts,motivo:motivo,fecha:fechaHoy()});
   saveDB();
-  sincronizar('addPuntosDelta',{clienteKey:key,nombre:clienteNombre,delta:pts,motivo:motivo,fecha:fechaHoy()});
+  sincronizar('addPuntosDelta',{clienteId:clienteId||'',clienteKey:key,nombre:clienteNombre,delta:pts,motivo:motivo,fecha:fechaHoy()});
 }
 
 function getPuntos(clienteNombre) {
@@ -671,9 +781,9 @@ function enviarMsgPuntos(clienteNombre) {
   window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msg),'_blank');
 }
 
-function agregarReferido(clienteNombre) {
+function agregarReferido(clienteNombre, clienteId) {
   var pts=db.config.ptosReferido||50;
-  sumarPuntos(clienteNombre,pts,'Referido');
+  sumarPuntos(clienteNombre,pts,'Referido',clienteId||'');
   alert(pts+' Puntos Dulces agregados por referido a '+clienteNombre+' \u2713');
   renderCRM();
 }
@@ -726,7 +836,7 @@ function renderHistorial() {
       +'<td><span class="badge '+badge+'">'+r.tipo+'</span> '+pagoTag+'</td>'
       +'<td>'+r.descripcion+'</td><td>'+r.cantidad+'</td>'
       +'<td>$'+fmt(r.valor)+'</td><td><strong>$'+fmt(r.total)+'</strong></td>'
-      +'<td>'+(r.cliente||'&mdash;')+'</td><td>'+r.responsable+'</td>'
+      +'<td>'+(r.cliente||'&mdash;')+(r.clienteId?'<br><small style="color:#c0a080;font-size:.72rem;">'+r.clienteId+'</small>':'')+'</td><td>'+r.responsable+'</td>'
       +'<td>'+(r.fechaCobro||'&mdash;')+'</td>'
       +'<td>'+delBtn+'</td></tr>';
   }).join('');
@@ -766,7 +876,7 @@ function renderDeudores() {
       +'<div class="client-header">'
       +'<span class="client-name">'+d.clienteNombre+' '+tag+'</span>'
       +'<div class="client-actions">'
-      +(d.tel?'<button class="btn btn-wa btn-sm" onclick="waCobroDirecto(\''+d.id+'\')">&#x1F4AC; WA</button>':'')
+      +(isAdmin()&&d.tel?'<button class="btn btn-wa btn-sm" onclick="waCobroDirecto(\''+d.id+'\')">&#x1F4AC; WA</button>':'')
       +'<button class="btn btn-success btn-sm" onclick="pagarDeuda(\''+d.id+'\')">&#x2713; Pagar</button>'
       +'</div></div>'
       +'<div style="font-size:.85rem;color:#6b4226;">'
@@ -782,20 +892,32 @@ function pagarDeuda(id) {
   for(var i=0;i<db.deudores.length;i++){
     if(db.deudores[i].id===id){
       db.deudores[i].estado='pagado';
-      // Registrar pago automático
       var d=db.deudores[i];
       var rec={
         id:Date.now().toString(),tipo:'Pago Deuda',fecha:fechaHoy(),
         descripcion:'Pago deuda de '+d.clienteNombre,cantidad:1,valor:d.valor,total:d.valor,
-        cliente:d.clienteNombre,tel:d.tel,responsable:db.currentUser.nombre,
-        recibo:'P'+String(db.config.consec2).padStart(5,'0'),notas:'',pago:'contado',fechaCobro:'',ts:Date.now()
+        clienteId:d.clienteId||'',cliente:d.clienteNombre,tel:d.tel||'',
+        responsable:db.currentUser.nombre,recibo:'',notas:'',pago:'contado',fechaCobro:'',ts:Date.now()
       };
-      db.config.consec2++;
       db.recibos.push(rec);
+      saveDB();
+      var gasUrl=db.config.gasUrl||'';
+      if(gasUrl){
+        var deudorId=id;
+        var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
+        fetch(gasUrl+params,{method:'GET',redirect:'follow'})
+          .then(function(r){return r.json();})
+          .then(function(d2){
+            if(d2.status==='ok'&&d2.recibo){rec.recibo=d2.recibo;saveDB();}
+            sincronizar('pagarDeudor',{id:deudorId});
+          })
+          .catch(function(){rec.recibo='LOCAL-P-'+Date.now();saveDB();});
+      } else {
+        rec.recibo='LOCAL-P-'+Date.now();saveDB();
+      }
       break;
     }
   }
-  saveDB();
   renderDeudores();
   renderResumenHoy();
 }
@@ -879,25 +1001,33 @@ function renderCRM() {
   filtered.forEach(function(c){
     var pts=getPuntos(c.nombre);
     var ptsBar=Math.min(100,Math.round(pts/umbral*100));
-    var ptsBono=pts>=umbral?'<button class="btn btn-primary btn-sm" onclick="enviarMsgPuntosId(\''+c.id+'\')">&#x1F381; Bono WA</button>':'';
+    var ptsBono=isAdmin()&&pts>=umbral?'<button class="btn btn-primary btn-sm" onclick="enviarMsgPuntosId(\''+c.id+'\')">&#x1F381; Bono WA</button>':'';
+    var notaInline=c.notas?'<span style="font-weight:400;color:#a07040;font-size:.88rem;"> ('+c.notas+')</span>':'';
+    var cumpleRow=c.cumpleanos?'<div style="font-size:.82rem;color:#a07040;margin-bottom:4px;">&#x1F382; '+c.cumpleanos+'</div>':'';
+    var auditRow='<div style="font-size:.72rem;color:#c0a080;margin-top:6px;">'
+      +(c.creadoPor?'Creado por <strong>'+c.creadoPor+'</strong>'+(c.creadoEn?' el '+c.creadoEn:''):'')
+      +(c.editadoPor&&c.editadoPor!==c.creadoPor?' &middot; Editado por <strong>'+c.editadoPor+'</strong>'+(c.editadoEn?' el '+c.editadoEn:''):'')
+      +'</div>';
     html+='<div class="client-card">'
       +'<div class="client-header">'
-      +'<span class="client-name">'+c.nombre+'</span>'
+      +'<span class="client-name">'+c.nombre+notaInline+'</span>'
       +'<div class="client-actions">'
-      +(c.tel?'<button class="btn btn-wa btn-sm" onclick="waDirecto(\''+c.id+'\')">&#x1F4AC; WA</button>':'')
-      +'<button class="btn btn-secondary btn-sm" onclick="agregarReferidoId(\''+c.id+'\')">&#x1F465; Referido</button>'
+      +(isAdmin()&&c.tel?'<button class="btn btn-wa btn-sm" onclick="waDirecto(\''+c.id+'\')">&#x1F4AC; WA</button>':'')
+      +(isAdmin()?'<button class="btn btn-secondary btn-sm" onclick="agregarReferidoId(\''+c.id+'\')">&#x1F465; Referido</button>':'')
       +'<button class="btn btn-secondary btn-sm" onclick="editarCliente(\''+c.id+'\')">&#x270F;&#xFE0F;</button>'
-      +'<button class="btn btn-danger btn-sm" onclick="eliminarCliente(\''+c.id+'\')">&#x1F5D1;&#xFE0F;</button>'
+      +(isAdmin()?'<button class="btn btn-danger btn-sm" onclick="eliminarCliente(\''+c.id+'\')">&#x1F5D1;&#xFE0F;</button>':'')
       +'</div></div>'
-      +'<div style="font-size:.85rem;color:#6b4226;margin-bottom:8px;">'
+      +'<div style="font-size:.85rem;color:#6b4226;margin-bottom:6px;">'
       +(c.tel?'&#x1F4DE; '+c.tel+'&nbsp;&nbsp;':'')+(c.email?'&#x2709;&#xFE0F; '+c.email+'&nbsp;&nbsp;':'')+(c.ciudad?'&#x1F4CD; '+c.ciudad:'')
       +'</div>'
+      +cumpleRow
       +'<div style="display:flex;align-items:center;gap:10px;">'
       +'<div style="flex:1;background:#f0e0c8;border-radius:20px;height:8px;overflow:hidden;">'
       +'<div style="width:'+ptsBar+'%;background:#824913;height:100%;border-radius:20px;transition:width .3s;"></div></div>'
       +'<span style="font-size:.82rem;color:#824913;font-weight:700;white-space:nowrap;">\uD83C\uDF6B '+pts+' / '+umbral+' pts</span>'
       +ptsBono+'</div>'
-      +(c.notas?'<div style="font-size:.82rem;color:#a07040;margin-top:6px;">'+c.notas+'</div>':'')
+      +auditRow
+      +'<div style="font-size:.7rem;color:#d4b896;margin-top:4px;">ID: '+c.id+'</div>'
       +'</div>';
   });
   lista.innerHTML=html;
@@ -917,23 +1047,35 @@ function guardarCliente() {
   var nombre=document.getElementById('ac-nombre').value.trim();
   var tel=document.getElementById('ac-tel').value.trim();
   if(!nombre){alert('El nombre es requerido.');return;}
-  var obj={id:id||Date.now().toString(),nombre:nombre,tel:tel,
+  var ahora=fechaHoy();
+  var quien=db.currentUser.nombre;
+  var existing=null;
+  if(id){for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===id){existing=db.clientes[i];break;}}}
+  var obj={
+    id:id||Date.now().toString(),
+    nombre:nombre,tel:tel,
     email:document.getElementById('ac-email').value.trim(),
     ciudad:document.getElementById('ac-ciudad').value.trim(),
-    notas:document.getElementById('ac-notas').value.trim()};
+    notas:document.getElementById('ac-notas').value.trim(),
+    cumpleanos:document.getElementById('ac-cumpleanos').value.trim(),
+    creadoPor:existing?existing.creadoPor||quien:quien,
+    creadoEn:existing?existing.creadoEn||ahora:ahora,
+    editadoPor:quien,
+    editadoEn:ahora
+  };
   if(id){
     for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===id){db.clientes[i]=obj;break;}}
   } else {
     db.clientes.push(obj);
   }
   saveDB();
-  sincronizar('saveCliente',db.clientes);
+  sincronizar('saveClienteUno',obj);
   limpiarCliente();
   alert('Cliente guardado \u2713');
 }
 
 function limpiarCliente() {
-  ['ac-id','ac-nombre','ac-tel','ac-email','ac-ciudad','ac-notas'].forEach(function(id){document.getElementById(id).value='';});
+  ['ac-id','ac-nombre','ac-tel','ac-email','ac-ciudad','ac-notas','ac-cumpleanos'].forEach(function(id){document.getElementById(id).value='';});
 }
 
 function editarCliente(id) {
@@ -946,6 +1088,7 @@ function editarCliente(id) {
   document.getElementById('ac-email').value=c.email||'';
   document.getElementById('ac-ciudad').value=c.ciudad||'';
   document.getElementById('ac-notas').value=c.notas||'';
+  document.getElementById('ac-cumpleanos').value=c.cumpleanos||'';
   document.querySelector('[data-tab="agregar-cliente"]').click();
 }
 
@@ -980,13 +1123,12 @@ function initAdmin() {
   document.getElementById('cfg-wapuntos').value=db.config.waMsgPuntos||'';
   document.getElementById('cfg-wapostventa').value=db.config.waMsgPostventa||'';
   var wc=document.getElementById('cfg-wacanje');if(wc)wc.value=db.config.waMsgCanje||'';
+  var wcu=document.getElementById('cfg-wacumple');if(wcu)wcu.value=db.config.waMsgCumpleanos||'';
   document.getElementById('cfg-ptosmil').value=db.config.ptosPorMil||1;
   document.getElementById('cfg-ptosref').value=db.config.ptosReferido||50;
   document.getElementById('cfg-ptosumbral').value=db.config.ptosUmbral||100;
   document.getElementById('cfg-descuento').value=db.config.descuentoPct||10;
   document.getElementById('cfg-bonodias').value=db.config.bonoDias||30;
-  document.getElementById('cfg-consec1').value=db.config.consec1||1;
-  document.getElementById('cfg-consec2').value=db.config.consec2||1;
   renderUsuariosAdmin();
   renderCatalogo();
   renderGastosFijosAdmin();
@@ -1013,6 +1155,7 @@ function guardarWaConfig() {
   db.config.waMsgPuntos=document.getElementById('cfg-wapuntos').value.trim();
   db.config.waMsgPostventa=document.getElementById('cfg-wapostventa').value.trim();
   var wce=document.getElementById('cfg-wacanje');if(wce)db.config.waMsgCanje=wce.value.trim();
+  var wcum=document.getElementById('cfg-wacumple');if(wcum)db.config.waMsgCumpleanos=wcum.value.trim();
   saveDB();
   sincronizar('saveConfig',db.config);
   alert('Configuraci\u00f3n WhatsApp guardada \u2713');
@@ -1027,14 +1170,6 @@ function guardarPuntosConfig() {
   saveDB();
   sincronizar('saveConfig',db.config);
   alert('Configuraci\u00f3n Puntos Dulces guardada \u2713');
-}
-
-function guardarConsecutivos() {
-  db.config.consec1=parseInt(document.getElementById('cfg-consec1').value)||1;
-  db.config.consec2=parseInt(document.getElementById('cfg-consec2').value)||1;
-  saveDB();
-  actualizarConsecutivo();
-  alert('Consecutivos guardados \u2713');
 }
 
 /* ===== USUARIOS ===== */
@@ -1262,9 +1397,9 @@ function renderPostventa() {
     html += '<div class="client-card">'
       + '<div class="client-header"><span class="client-name">' + c.nombre + '</span>'
       + '<div class="client-actions">';
-    if (c.tel) {
+    if (isAdmin() && c.tel) {
       html += '<button class="btn btn-wa btn-sm" onclick="enviarPostventa(this)" data-nombre="' + c.nombre.replace(/"/g, '&quot;') + '" data-tel="' + c.tel + '">&#x1F4AC; Enviar WA</button>';
-    } else {
+    } else if (!c.tel) {
       html += '<span style="font-size:.8rem;color:#a07040;">Sin tel\u00e9fono</span>';
     }
     html += '<button class="btn btn-secondary btn-sm" onclick="marcarPVEnviado(this)" data-nombre="' + c.nombre.replace(/"/g, '&quot;') + '">\u2713 Ya enviado</button>'
@@ -1392,6 +1527,7 @@ function cargarDesdeSheets(cb) {
           descripcion: String(r.descripcion||''), cantidad: parseFloat(r.cantidad)||1,
           valor: parseFloat(r.valor)||0, total: parseFloat(r.total)||0,
           cliente: String(r.cliente||''), tel: String(r.tel||''),
+          clienteId: String(r.clienteId||''),
           responsable: String(r.responsable||''), recibo: String(r.recibo||''),
           notas: String(r.notas||''), pago: String(r.pago||'contado'),
           fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0
@@ -1401,10 +1537,16 @@ function cargarDesdeSheets(cb) {
         return { id:String(p.id), nombre:String(p.nombre), precio:parseFloat(p.precio)||0, costo:parseFloat(p.costo)||0, categoria:String(p.categoria||''), descripcion:String(p.descripcion||'') };
       });
       if (data.clientes && data.clientes.length) db.clientes = data.clientes.map(function(c) {
-        return { id:String(c.id), nombre:String(c.nombre||''), tel:String(c.tel||''), email:String(c.email||''), ciudad:String(c.ciudad||''), notas:String(c.notas||'') };
+        return {
+          id:String(c.id), nombre:String(c.nombre||''), tel:String(c.tel||''),
+          email:String(c.email||''), ciudad:String(c.ciudad||''), notas:String(c.notas||''),
+          cumpleanos:String(c.cumpleanos||''),
+          creadoPor:String(c.creadoPor||''), creadoEn:String(c.creadoEn||''),
+          editadoPor:String(c.editadoPor||''), editadoEn:String(c.editadoEn||'')
+        };
       });
       if (data.deudores && data.deudores.length) db.deudores = data.deudores.map(function(d) {
-        return { id:String(d.id), reciboId:String(d.reciboId||''), clienteNombre:String(d.clienteNombre||''), tel:String(d.tel||''), valor:parseFloat(d.valor)||0, fechaCobro:String(d.fechaCobro||''), estado:String(d.estado||'pendiente'), ts:parseFloat(d.ts)||0 };
+        return { id:String(d.id), reciboId:String(d.reciboId||''), clienteId:String(d.clienteId||''), clienteNombre:String(d.clienteNombre||''), tel:String(d.tel||''), valor:parseFloat(d.valor)||0, fechaCobro:String(d.fechaCobro||''), estado:String(d.estado||'pendiente'), ts:parseFloat(d.ts)||0 };
       });
       if (data.puntos && data.puntos.length) {
         db.puntos = {};
@@ -1440,7 +1582,7 @@ function cargarDesdeSheets(cb) {
         db.gastosFijos = gf;
       }
       if (data.config) {
-        var numKeys = ['ptosPorMil','ptosReferido','ptosUmbral','descuentoPct','bonoDias','consec1','consec2'];
+        var numKeys = ['ptosPorMil','ptosReferido','ptosUmbral','descuentoPct','bonoDias'];
         Object.keys(data.config).forEach(function(k) {
           if (k === 'usuarios') return;
           if (k === 'gasUrl') return; // NUNCA sobrescribir la URL embebida
@@ -1516,7 +1658,7 @@ function canjearDescuento() {
   db.puntos[key].total-=umbral;
   db.puntos[key].historial.push({pts:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
   saveDB();
-  sincronizar('addPuntosDelta',{clienteKey:key,nombre:db.puntos[key].nombre,delta:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
+  sincronizar('addPuntosDelta',{clienteId:currentNeClienteId||'',clienteKey:key,nombre:db.puntos[key].nombre,delta:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
   var ptsTotalesActual=db.puntos[key]?db.puntos[key].total:0;
   var ptsGanadosEstimado=Math.floor((valDesc*(parseFloat(document.getElementById('ne-cantidad').value)||1))/1000)*(db.config.ptosPorMil||1);
   // Deshabilitar boton para un solo canje por venta
@@ -1581,13 +1723,13 @@ function agregarReferidoId(clienteId) {
   var c=null;
   for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===clienteId){c=db.clientes[i];break;}}
   if(!c) return;
-  agregarReferido(c.nombre);
+  agregarReferido(c.nombre, clienteId);
 }
 
 /* ===================== BOOT ===================== */
 loadDB();
 // Fuente de verdad unica: la URL del HTML siempre tiene prioridad sobre localStorage
-db.config.gasUrl='https://script.google.com/macros/s/AKfycbzS0tGfbY3rjIcnw6ycDPeh9gbVoJIaSleYaVBW9AKoaPFrEpqfVQO4vzENawnRlI83-g/exec';
+db.config.gasUrl='https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec';
 // Restaurar sesion si existe
 (function() {
   try {
