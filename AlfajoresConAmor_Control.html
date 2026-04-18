@@ -344,7 +344,7 @@ function doLogin() {
     var found=null;
     for(var i=0;i<usuarios.length;i++){
       var usr=usuarios[i];
-      if(usr.username.toLowerCase()===u.toLowerCase()&&usr.password===p){found=usr;break;}
+      if(usr.username.toLowerCase()===u.toLowerCase()&&String(usr.password)===String(p)){found=usr;break;}
     }
     if(btn){btn.disabled=false;btn.textContent='Ingresar';}
     if(found){
