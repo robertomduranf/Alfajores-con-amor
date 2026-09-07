@@ -812,8 +812,12 @@ function guardarRecibo() {
   var fecha=fechaRaw?fechaRaw.split('T')[0]:fechaHoy();
   var items=tipo==='Venta'?obtenerItemsVentaParaGuardar():[];
   var desc=tipo==='Venta'?(items.length?resumenItemsVenta(items):''):document.getElementById('ne-descripcion').value.trim();
-  var cant=tipo==='Venta'?items.reduce(function(a,it){return a+(parseFloat(it.cantidad)||0);},0):(parseFloat(document.getElementById('ne-cantidad').value)||1);
-  var total=tipo==='Venta'?items.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0):((parseFloat(document.getElementById('ne-valor').value)||0)*cant);
+
+  // Las promociones permanecen en descripcion/items, pero NO cuentan como unidades pagadas.
+  // Esto evita que un regalo $0 distorsione cantidad y valor promedio del recibo.
+  var itemsPagados=tipo==='Venta'?items.filter(function(it){return !it.promo;}):[];
+  var cant=tipo==='Venta'?itemsPagados.reduce(function(a,it){return a+(parseFloat(it.cantidad)||0);},0):(parseFloat(document.getElementById('ne-cantidad').value)||1);
+  var total=tipo==='Venta'?itemsPagados.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0):((parseFloat(document.getElementById('ne-valor').value)||0)*cant);
   var valor=tipo==='Venta'?(cant>0?total/cant:0):(parseFloat(document.getElementById('ne-valor').value)||0);
   var cliente=document.getElementById('ne-cliente').value.trim();
   var tel=document.getElementById('ne-tel').value.trim().replace(/\D/g,'');
