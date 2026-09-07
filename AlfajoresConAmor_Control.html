@@ -88,6 +88,21 @@ tr:hover td{background:rgba(130,73,19,.04);}
 .client-actions{display:flex;gap:6px;flex-wrap:wrap;}
 .flex-end{display:flex;justify-content:flex-end;gap:10px;}
 .mt-8{margin-top:8px;}.mb-0{margin-bottom:0;}.w100{width:100%;}
+
+.multi-cart{display:none;margin:-2px 0 14px;padding:12px;background:#fff9f0;border:1px solid var(--border);border-radius:9px;}
+.multi-cart.show{display:block;}
+.multi-cart-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.multi-cart-title{font-size:.86rem;font-weight:700;color:var(--accent);}
+.multi-cart-list{display:flex;flex-direction:column;gap:7px;}
+.multi-cart-item{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:8px 10px;background:var(--card);border:1px solid var(--border);border-radius:8px;}
+.multi-cart-name{font-size:.86rem;font-weight:700;color:var(--text2);}
+.multi-cart-meta{font-size:.76rem;color:var(--text3);margin-top:2px;}
+.multi-cart-total{font-size:.86rem;font-weight:800;color:var(--accent);white-space:nowrap;}
+.multi-cart-remove{border:none;background:none;color:var(--red);cursor:pointer;font-size:1rem;padding:4px 5px;}
+.multi-cart-summary{display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding-top:8px;border-top:1px solid var(--border);font-size:.86rem;color:var(--text2);}
+.multi-cart-summary strong{font-size:1rem;color:var(--accent);}
+.btn-add-product{width:100%;margin-top:-4px;margin-bottom:12px;}
+
 @media(max-width:768px){
   #admin-grid{grid-template-columns:1fr!important;}
   #admin-grid .card[style]{grid-column:1!important;}
@@ -185,12 +200,19 @@ tr:hover td{background:rgba(130,73,19,.04);}
           <div class="form-group" id="ne-qty-group"><label>Cantidad</label><input type="number" id="ne-cantidad" value="1" min="1" oninput="calcTotal()"></div>
           <div class="form-group"><label>Valor Unitario ($)</label><input type="number" id="ne-valor" placeholder="0" oninput="calcTotal()"></div>
           <div class="form-group"><label>Total ($)</label><input type="number" id="ne-total" placeholder="0" readonly style="background:#e8e0d8;font-weight:700;"></div>
+          <div id="ne-addprod-wrap">
+            <button type="button" class="btn btn-secondary btn-add-product" onclick="agregarProductoVenta()">&#x2795; Agregar otro producto</button>
+            <div id="ne-carrito" class="multi-cart">
+              <div class="multi-cart-head"><span class="multi-cart-title">&#x1F6D2; Productos de esta compra</span><button type="button" class="btn btn-secondary btn-sm" onclick="vaciarCarritoVenta()">Vaciar</button></div>
+              <div id="ne-carrito-lista" class="multi-cart-list"></div>
+              <div class="multi-cart-summary"><span id="ne-carrito-cantidad">0 productos</span><strong id="ne-carrito-total">$0</strong></div>
+            </div>
+          </div>
           <div class="form-group" id="ne-pago-group"><label>Forma de pago</label><select id="ne-pago" onchange="onPagoChange()"><option value="contado">Contado</option><option value="credito">Cr&eacute;dito</option></select></div>
           <div class="form-group" id="ne-fechacobro-group" style="display:none;"><label>&#x1F4C5; Fecha de cobro</label><input type="date" id="ne-fechacobro"><small>El sistema te alertar&aacute; un d&iacute;a antes.</small></div>
           <div class="form-group" id="ne-cliente-group">
             <label>Cliente <small style="color:var(--red);">*requerido en ventas</small></label>
-            <input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value);mostrarPuntosCliente(this.value);mostrarNotaCliente(this.value);" autocomplete="off">
-            <div id="ne-cliente-nota" style="display:none;margin-top:4px;padding:5px 10px;background:#fff3e0;border-radius:6px;border-left:3px solid #e8a020;font-size:.82rem;color:#a07040;"></div>
+            <input type="text" id="ne-cliente" placeholder="Nombre del cliente" oninput="buscarClienteSugerencia(this.value);mostrarPuntosCliente(this.value);" autocomplete="off">
             <div id="cliente-suggestions" style="position:relative;"></div>
           </div>
           <div id="ne-puntos-info" style="display:none;margin-bottom:14px;padding:10px 14px;background:#fff9f0;border-radius:8px;border-left:4px solid #824913;">
@@ -200,7 +222,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
             </div>
           </div>
           <div class="form-group" id="ne-tel-group"><label>Tel&eacute;fono <small>(auto-registra cliente nuevo)</small></label><input type="text" id="ne-tel" placeholder="Ej: 3001234567"></div>
-          <div class="form-group" id="ne-nota-cliente-group"><label>Nota del cliente <small style="color:var(--text3);">(opcional)</small></label><input type="text" id="ne-nota-cliente" placeholder="Ej: arepas, curso marketing..."></div>
           <div class="form-group"><label>Responsable</label><input type="text" id="ne-responsable" readonly></div>
           <div class="form-group"><label>Notas (opcional)</label><textarea id="ne-notas" placeholder="Notas adicionales"></textarea></div>
           <div class="flex-end"><button class="btn btn-secondary" onclick="limpiarNE()">Limpiar</button><button class="btn btn-primary" id="btn-guardar" onclick="guardarRecibo()">Guardar &#x2713;</button></div>
@@ -299,6 +320,7 @@ var waCurrentTel = '';
 var waCurrentNombre = '';
 var charts = {};
 var currentNeClienteId = ''; // Id del cliente seleccionado en Nueva Entrada
+var neItems = []; // Lineas de producto de la venta actual (solo Nueva Entrada)
 
 function saveDB() {
   try {
@@ -544,6 +566,9 @@ function onTipoChange() {
   document.getElementById('ne-tel-group').style.display=isVenta?'':'none';
   document.getElementById('ne-pago-group').style.display=isVenta?'':'none';
   document.getElementById('ne-fechacobro-group').style.display='none';
+  var addWrap=document.getElementById('ne-addprod-wrap');
+  if(addWrap) addWrap.style.display=isVenta?'':'none';
+  if(!isVenta&&neItems.length){neItems=[];renderCarritoVenta();}
 }
 
 function onPagoChange() {
@@ -577,6 +602,83 @@ function calcTotal() {
   document.getElementById('ne-total').value=v*q;
 }
 
+function productoActualVenta() {
+  var id=document.getElementById('ne-producto').value;
+  var desc=document.getElementById('ne-descripcion').value.trim();
+  var valor=parseFloat(document.getElementById('ne-valor').value)||0;
+  var cantidad=parseFloat(document.getElementById('ne-cantidad').value)||1;
+  if(!desc||valor<=0||cantidad<=0) return null;
+  return {productoId:id||'',nombre:desc,cantidad:cantidad,valor:valor,total:valor*cantidad};
+}
+
+function agregarProductoVenta() {
+  if(document.getElementById('ne-tipo').value!=='Venta') return;
+  var item=productoActualVenta();
+  if(!item){alert('Selecciona o ingresa un producto, cantidad y valor válidos.');return;}
+  neItems.push(item);
+  renderCarritoVenta();
+  document.getElementById('ne-producto').value='';
+  document.getElementById('ne-descripcion').value='';
+  document.getElementById('ne-valor').value='';
+  document.getElementById('ne-cantidad').value='1';
+  document.getElementById('ne-total').value='';
+}
+
+function quitarProductoVenta(index) {
+  if(index<0||index>=neItems.length) return;
+  neItems.splice(index,1);
+  renderCarritoVenta();
+}
+
+function vaciarCarritoVenta() {
+  neItems=[];
+  renderCarritoVenta();
+}
+
+function renderCarritoVenta() {
+  var box=document.getElementById('ne-carrito');
+  var lista=document.getElementById('ne-carrito-lista');
+  var lbl=document.getElementById('ne-carrito-cantidad');
+  var totalEl=document.getElementById('ne-carrito-total');
+  if(!box||!lista) return;
+  if(!neItems.length){
+    box.classList.remove('show');
+    lista.innerHTML='';
+    if(lbl) lbl.textContent='0 productos';
+    if(totalEl) totalEl.textContent='$0';
+    return;
+  }
+  box.classList.add('show');
+  lista.innerHTML=neItems.map(function(it,i){
+    return '<div class="multi-cart-item">'
+      +'<div><div class="multi-cart-name">'+it.nombre+'</div>'
+      +'<div class="multi-cart-meta">'+it.cantidad+' × $'+fmt(it.valor)+'</div></div>'
+      +'<div class="multi-cart-total">$'+fmt(it.total)+'</div>'
+      +'<button type="button" class="multi-cart-remove" onclick="quitarProductoVenta('+i+')" title="Quitar">&#x2715;</button>'
+      +'</div>';
+  }).join('');
+  var unidades=neItems.reduce(function(a,it){return a+(parseFloat(it.cantidad)||0);},0);
+  var total=neItems.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0);
+  if(lbl) lbl.textContent=neItems.length+' producto'+(neItems.length===1?'':'s')+' · '+unidades+' unidad'+(unidades===1?'':'es');
+  if(totalEl) totalEl.textContent='$'+fmt(total);
+}
+
+function obtenerItemsVentaParaGuardar() {
+  var items=neItems.slice();
+  var actual=productoActualVenta();
+  if(actual){
+    // Mantiene intacto el flujo anterior: si no se usó el carrito, Guardar toma el producto actual.
+    // Si ya hay líneas, también incorpora la última línea que quedó diligenciada.
+    items.push(actual);
+  }
+  return items;
+}
+
+function resumenItemsVenta(items) {
+  if(items.length===1) return items[0].nombre;
+  return items.map(function(it){return (it.cantidad||1)+'× '+it.nombre;}).join(' + ');
+}
+
 /* ===================== SUGERENCIAS CLIENTE ===================== */
 function buscarClienteSugerencia(q) {
   var box=document.getElementById('cliente-suggestions');
@@ -594,11 +696,9 @@ function buscarClienteSugerencia(q) {
     item.onmousedown=function(){
       document.getElementById('ne-cliente').value=c.nombre;
       document.getElementById('ne-tel').value=c.tel||'';
-      document.getElementById('ne-nota-cliente').value=c.notas||'';
       currentNeClienteId=c.id||'';
       box.innerHTML='';
       mostrarPuntosCliente(c.nombre);
-      mostrarNotaCliente(c.nombre);
     };
     div.appendChild(item);
   });
@@ -614,18 +714,21 @@ function guardarRecibo() {
   var tipo=document.getElementById('ne-tipo').value;
   var fechaRaw=document.getElementById('ne-fecha').value;
   var fecha=fechaRaw?fechaRaw.split('T')[0]:fechaHoy();
-  var desc=document.getElementById('ne-descripcion').value.trim();
-  var valor=parseFloat(document.getElementById('ne-valor').value)||0;
-  var cant=parseFloat(document.getElementById('ne-cantidad').value)||1;
-  var total=valor*cant;
+  var items=tipo==='Venta'?obtenerItemsVentaParaGuardar():[];
+  var desc=tipo==='Venta'?(items.length?resumenItemsVenta(items):''):document.getElementById('ne-descripcion').value.trim();
+  var cant=tipo==='Venta'?items.reduce(function(a,it){return a+(parseFloat(it.cantidad)||0);},0):(parseFloat(document.getElementById('ne-cantidad').value)||1);
+  var total=tipo==='Venta'?items.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0):((parseFloat(document.getElementById('ne-valor').value)||0)*cant);
+  var valor=tipo==='Venta'?(cant>0?total/cant:0):(parseFloat(document.getElementById('ne-valor').value)||0);
   var cliente=document.getElementById('ne-cliente').value.trim();
   var tel=document.getElementById('ne-tel').value.trim().replace(/\D/g,'');
   var notas=document.getElementById('ne-notas').value.trim();
   var pago=tipo==='Venta'?document.getElementById('ne-pago').value:'contado';
   var fechaCobro=pago==='credito'?document.getElementById('ne-fechacobro').value:'';
-  if(!fecha||!desc||valor<=0){alert('Completa fecha, descripci\u00F3n y valor.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}return;}
-  if(pago==='credito'&&!fechaCobro){alert('Ingresa la fecha de cobro.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}return;}
-  if(tipo==='Venta'&&!cliente){alert('Ingresa el nombre del cliente.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}return;}
+  if(tipo==='Venta'&&!items.length){alert('Agrega al menos un producto a la venta.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}return;}
+  if(tipo!=='Venta'&&(!fecha||!desc||valor<=0)){alert('Completa fecha, descripción y valor.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}return;}
+  if(!fecha||total<=0){alert('Completa fecha y valor.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}return;}
+  if(pago==='credito'&&!fechaCobro){alert('Ingresa la fecha de cobro.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}return;}
+  if(tipo==='Venta'&&!cliente){alert('Ingresa el nombre del cliente.');if(btnG){btnG.disabled=false;btnG.textContent='Guardar ✓';}return;}
   // Capturar canje ANTES de limpiarNE
   var localCanjeAplicado=canjeAplicado;
   var localCanjeData=canjeAplicado?{nombre:canjeData.nombre,pct:canjeData.pct,totalAntes:canjeData.totalAntes,totalDespues:canjeData.totalDespues,ptsCanjeados:canjeData.ptsCanjeados,ptsTotales:canjeData.ptsTotales,ptsGanados:canjeData.ptsGanados}:{};
@@ -654,27 +757,22 @@ function guardarRecibo() {
         window._tempWaMsg=msgCanje;window._tempWaTel=telCanje;
         document.getElementById('modal-wa').classList.add('open');
       } else {
-        var ptsT=getPuntos(cliente, currentNeClienteId||'');
+        var ptsT=getPuntos(cliente);
         mostrarWaModal(cliente||'Cliente',tel,desc,total,pts,ptsT);
       }
     }
   }
 
   if(tipo==='Venta'){
-    // Buscar cliente existente: primero por id (autocomplete), luego por teléfono
+    // Buscar cliente existente
     var clienteExist=null;
-    if(currentNeClienteId){
-      for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].id===currentNeClienteId){clienteExist=db.clientes[i];break;}}
-    }
-    if(!clienteExist&&tel){
-      for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].tel&&db.clientes[i].tel.replace(/\D/g,'')===tel){clienteExist=db.clientes[i];break;}}
-    }
+    for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===cliente.toLowerCase()){clienteExist=db.clientes[i];break;}}
     var localClienteId=currentNeClienteId||(clienteExist?clienteExist.id:Date.now().toString());
     var clienteObj={
       id:localClienteId,nombre:cliente,tel:tel,
       email:clienteExist?clienteExist.email||'':'',
       ciudad:clienteExist?clienteExist.ciudad||'':'',
-      notas:document.getElementById('ne-nota-cliente').value.trim()||( clienteExist?clienteExist.notas||'':''),
+      notas:clienteExist?clienteExist.notas||'':'',
       cumpleanos:clienteExist?clienteExist.cumpleanos||'':'',
       creadoPor:clienteExist?clienteExist.creadoPor||db.currentUser.nombre:db.currentUser.nombre,
       creadoEn:clienteExist?clienteExist.creadoEn||fechaHoy():fechaHoy(),
@@ -687,13 +785,13 @@ function guardarRecibo() {
       clienteObj.id=clienteId;
       var idx=-1;
       for(var j=0;j<db.clientes.length;j++){
-        if(db.clientes[j].id===clienteId||(tel&&db.clientes[j].tel&&db.clientes[j].tel.replace(/\D/g,'')===tel)){idx=j;break;}
+        if(db.clientes[j].id===clienteId||db.clientes[j].nombre.toLowerCase()===cliente.toLowerCase()){idx=j;break;}
       }
       if(idx>=0){db.clientes[idx]=clienteObj;}else{db.clientes.push(clienteObj);}
       // Sumar puntos con clienteId
       if(pts>0) sumarPuntos(cliente,pts,'Compra: '+desc,clienteId);
       // Construir recibo con clienteId
-      var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,
+      var rec={id:Date.now().toString(),tipo:tipo,fecha:fecha,descripcion:desc,cantidad:cant,valor:valor,total:total,items:items,
         clienteId:clienteId,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,
         recibo:'',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
       if(url){
@@ -796,19 +894,18 @@ function guardarRecibo() {
 }
 
 function limpiarNE() {
+  neItems=[];renderCarritoVenta();
   document.getElementById('ne-descripcion').value='';
   document.getElementById('ne-valor').value='';
   document.getElementById('ne-cantidad').value='1';
   document.getElementById('ne-total').value='';
   document.getElementById('ne-cliente').value='';
   document.getElementById('ne-tel').value='';
-  document.getElementById('ne-nota-cliente').value='';
   document.getElementById('ne-notas').value='';
   document.getElementById('ne-producto').value='';
   document.getElementById('ne-pago').value='contado';
   document.getElementById('ne-fechacobro').value='';
   var pinfo=document.getElementById('ne-puntos-info');if(pinfo)pinfo.style.display='none';
-  var cnota=document.getElementById('ne-cliente-nota');if(cnota){cnota.style.display='none';cnota.textContent='';}
   currentNeClienteId='';
   canjeAplicado=false;canjeData={};
   onPagoChange();
@@ -818,7 +915,7 @@ function limpiarNE() {
 /* ===================== PUNTOS ===================== */
 function sumarPuntos(clienteNombre, pts, motivo, clienteId) {
   if(!clienteNombre || pts<=0) return;
-  var key=clienteId||clienteNombre.toLowerCase();
+  var key=clienteNombre.toLowerCase();
   if(!db.puntos) db.puntos={};
   if(!db.puntos[key]) db.puntos[key]={nombre:clienteNombre,total:0,historial:[]};
   db.puntos[key].total += pts;
@@ -827,16 +924,14 @@ function sumarPuntos(clienteNombre, pts, motivo, clienteId) {
   sincronizar('addPuntosDelta',{clienteId:clienteId||'',clienteKey:key,nombre:clienteNombre,delta:pts,motivo:motivo,fecha:fechaHoy()});
 }
 
-function getPuntos(clienteNombre, clienteId) {
-  var key=clienteId||clienteNombre.toLowerCase();
+function getPuntos(clienteNombre) {
+  var key=clienteNombre.toLowerCase();
   return db.puntos[key]?db.puntos[key].total:0;
 }
 
 function enviarMsgPuntos(clienteNombre) {
-  var cid='';
-  for(var i=0;i<db.clientes.length;i++){if(db.clientes[i].nombre.toLowerCase()===clienteNombre.toLowerCase()){cid=db.clientes[i].id;break;}}
-  var key=cid||clienteNombre.toLowerCase();
-  var pts=getPuntos(clienteNombre,cid);
+  var key=clienteNombre.toLowerCase();
+  var pts=getPuntos(clienteNombre);
   var umbral=db.config.ptosUmbral||100;
   if(pts<umbral){alert('El cliente aun no alcanza el umbral de '+umbral+' puntos.');return;}
   var c=null;
@@ -1009,7 +1104,13 @@ function renderGraficas() {
   });
   renderChart('chart-vg','bar',{labels:meses,datasets:[{label:'Ventas',data:vMes,backgroundColor:'rgba(45,122,58,.7)'},{label:'Gastos',data:gMes,backgroundColor:'rgba(192,57,43,.7)'}]});
   var prodTotals={};
-  db.recibos.filter(function(r){return r.tipo==='Venta';}).forEach(function(r){prodTotals[r.descripcion]=(prodTotals[r.descripcion]||0)+r.total;});
+  db.recibos.filter(function(r){return r.tipo==='Venta';}).forEach(function(r){
+    if(Array.isArray(r.items)&&r.items.length){
+      r.items.forEach(function(it){var n=it.nombre||'Producto';prodTotals[n]=(prodTotals[n]||0)+(parseFloat(it.total)||0);});
+    } else {
+      prodTotals[r.descripcion]=(prodTotals[r.descripcion]||0)+r.total;
+    }
+  });
   var prodSort=Object.entries(prodTotals).sort(function(a,b){return b[1]-a[1];}).slice(0,6);
   renderChart('chart-prod','doughnut',{labels:prodSort.map(function(x){return x[0];}),datasets:[{data:prodSort.map(function(x){return x[1];}),backgroundColor:['#824913','#a05c20','#c4813a','#d4a55a','#e8c87a','#f5e2ae']}]});
   var dias=[];
@@ -1083,7 +1184,7 @@ function renderCRM() {
   var umbral=db.config.ptosUmbral||100;
   var html='';
   filtered.forEach(function(c){
-    var pts=getPuntos(c.nombre, c.id);
+    var pts=getPuntos(c.nombre);
     var ptsBar=Math.min(100,Math.round(pts/umbral*100));
     var ptsBono=isAdmin()&&pts>=umbral?'<button class="btn btn-primary btn-sm" onclick="enviarMsgPuntosId(\''+c.id+'\')">&#x1F381; Bono WA</button>':'';
     var notaInline=c.notas?'<span style="font-weight:400;color:#a07040;font-size:.88rem;"> ('+c.notas+')</span>':'';
@@ -1131,7 +1232,7 @@ function exportarContactosCSV() {
       c.ciudad||'',
       c.notas||'',
       c.cumpleanos||'',
-      getPuntos(c.nombre, c.id)
+      getPuntos(c.nombre)
     ]);
   });
   var csv=filas.map(function(r){
@@ -1649,7 +1750,8 @@ function cargarDesdeSheets(cb, _localPendientes) {
           clienteId: String(r.clienteId||''),
           responsable: String(r.responsable||''), recibo: String(r.recibo||''),
           notas: String(r.notas||''), pago: String(r.pago||'contado'),
-          fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0
+          fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0,
+          items: Array.isArray(r.items)?r.items:[]
         };
         });
         // Reincorporar locales que no llegaron a Sheets
@@ -1676,8 +1778,8 @@ function cargarDesdeSheets(cb, _localPendientes) {
       if (data.puntos && data.puntos.length) {
         db.puntos = {};
         data.puntos.forEach(function(p) {
-          var rawKey = String(p.clienteId || p.clienteKey || '');
-          var key = (rawKey && isNaN(rawKey)) ? rawKey : String(p.nombre || '').toLowerCase();
+          var rawKey = String(p.clienteKey || '');
+          var key = (!rawKey || !isNaN(rawKey)) ? String(p.nombre || '').toLowerCase() : rawKey.toLowerCase();
           if (!key) return;
           var historial = [];
           try {
@@ -1746,33 +1848,13 @@ function actualizarDatos() {
   }, _pend);
 }
 
-function mostrarNotaCliente(nombre) {
-  var div=document.getElementById('ne-cliente-nota');
-  if(!div) return;
-  if(!nombre||nombre.length<2){div.style.display='none';div.textContent='';return;}
-  var c=null;
-  for(var i=0;i<db.clientes.length;i++){
-    if(db.clientes[i].nombre.toLowerCase()===nombre.toLowerCase()){c=db.clientes[i];break;}
-  }
-  if(c&&c.notas){
-    div.textContent='\uD83D\uDCC4 Cliente existente: '+c.nombre+(c.notas?' \u2014 '+c.notas:'')+(c.tel?' \u00B7 '+c.tel:'');
-    div.style.display='';
-  } else if(c) {
-    div.textContent='\uD83D\uDCC4 Cliente existente: '+c.nombre+(c.tel?' \u00B7 '+c.tel:'');
-    div.style.display='';
-  } else {
-    div.style.display='none';div.textContent='';
-  }
-}
-
 function mostrarPuntosCliente(nombre) {
   var info=document.getElementById('ne-puntos-info');
   var txt=document.getElementById('ne-puntos-txt');
   var btn=document.getElementById('ne-btn-canjear');
   if(!info) return;
   if(!nombre||nombre.length<2){info.style.display='none';return;}
-  var cid=currentNeClienteId||'';
-  var pts=getPuntos(nombre,cid);
+  var pts=getPuntos(nombre);
   var umbral=db.config.ptosUmbral||100;
   var pct=db.config.descuentoPct||10;
   var bonos=Math.floor(pts/umbral);
@@ -1788,41 +1870,59 @@ function mostrarPuntosCliente(nombre) {
 }
 
 function canjearDescuento() {
-  if(canjeAplicado){alert('Ya se aplic\u00F3 un descuento en esta venta.');return;}
+  if(canjeAplicado){alert('Ya se aplicó un descuento en esta venta.');return;}
   var nombre=document.getElementById('ne-cliente').value.trim();
-  var pts=getPuntos(nombre,currentNeClienteId||'');
+  var pts=getPuntos(nombre);
   var umbral=db.config.ptosUmbral||100;
   var pct=db.config.descuentoPct||10;
   if(pts<umbral){alert('El cliente no tiene suficientes puntos.');return;}
-  var val=parseFloat(document.getElementById('ne-valor').value)||0;
-  if(val<=0){alert('Ingresa el valor del producto primero.');return;}
-  var valDesc=Math.round(val*(1-pct/100));
-  document.getElementById('ne-valor').value=valDesc;
-  calcTotal();
-  var key=currentNeClienteId||nombre.toLowerCase();
+
+  var totalAntes=0,totalDespues=0;
+  if(neItems.length){
+    var pendiente=productoActualVenta();
+    if(pendiente){
+      neItems.push(pendiente);
+      document.getElementById('ne-producto').value='';
+      document.getElementById('ne-descripcion').value='';
+      document.getElementById('ne-valor').value='';
+      document.getElementById('ne-cantidad').value='1';
+      document.getElementById('ne-total').value='';
+    }
+    totalAntes=neItems.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0);
+    neItems=neItems.map(function(it){
+      var nuevoValor=Math.round((parseFloat(it.valor)||0)*(1-pct/100));
+      var nuevo=Object.assign({},it);
+      nuevo.valor=nuevoValor;
+      nuevo.total=nuevoValor*(parseFloat(it.cantidad)||1);
+      return nuevo;
+    });
+    totalDespues=neItems.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0);
+    renderCarritoVenta();
+  } else {
+    var val=parseFloat(document.getElementById('ne-valor').value)||0;
+    if(val<=0){alert('Ingresa el valor del producto primero.');return;}
+    var cantidad=parseFloat(document.getElementById('ne-cantidad').value)||1;
+    totalAntes=val*cantidad;
+    var valDesc=Math.round(val*(1-pct/100));
+    document.getElementById('ne-valor').value=valDesc;
+    calcTotal();
+    totalDespues=valDesc*cantidad;
+  }
+
+  var key=nombre.toLowerCase();
   if(!db.puntos[key]) return;
   db.puntos[key].total-=umbral;
   db.puntos[key].historial.push({pts:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
   saveDB();
   sincronizar('addPuntosDelta',{clienteId:currentNeClienteId||'',clienteKey:key,nombre:db.puntos[key].nombre,delta:-umbral,motivo:'Canje '+pct+'% descuento',fecha:fechaHoy()});
   var ptsTotalesActual=db.puntos[key]?db.puntos[key].total:0;
-  var ptsGanadosEstimado=Math.floor((valDesc*(parseFloat(document.getElementById('ne-cantidad').value)||1))/1000)*(db.config.ptosPorMil||1);
-  // Deshabilitar boton para un solo canje por venta
-  var btnCanje=document.getElementById('ne-btn-canjear');
-  if(btnCanje){btnCanje.disabled=true;btnCanje.textContent='\u2713 Descuento aplicado';}
-  mostrarPuntosCliente(nombre);
-  // Guardar datos del canje para usar al momento de guardar la venta
-  canjeAplicado = true;
-  canjeData = {
-    nombre: nombre,
-    pct: pct,
-    totalAntes: val*(parseFloat(document.getElementById('ne-cantidad').value)||1),
-    totalDespues: valDesc*(parseFloat(document.getElementById('ne-cantidad').value)||1),
-    ptsCanjeados: umbral,
-    ptsTotales: ptsTotalesActual,
-    ptsGanados: ptsGanadosEstimado
+  var ptsGanadosEstimado=Math.floor(totalDespues/1000)*(db.config.ptosPorMil||1);
+  canjeAplicado=true;
+  canjeData={
+    nombre:nombre,pct:pct,totalAntes:totalAntes,totalDespues:totalDespues,
+    ptsCanjeados:umbral,ptsTotales:ptsTotalesActual,ptsGanados:ptsGanadosEstimado
   };
-  alert('\u2713 Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces. El mensaje de canje se enviar\u00E1 al guardar.');
+  alert('✓ Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces. El mensaje de canje se enviará al guardar.');
 }
 
 function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales) {
@@ -1883,7 +1983,7 @@ db.config.gasUrl='https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3
     if (saved) {
       var user = JSON.parse(saved);
       // Verificar que el usuario sigue existiendo
-      var exists = db.config.usuarios.some(function(u) { return u.id === user.id && String(u.password) === String(user.password); });
+      var exists = db.config.usuarios.some(function(u) { return u.id === user.id && u.password === user.password; });
       if (exists) { loginAs(user); return; }
       localStorage.removeItem('aca_session');
     }
