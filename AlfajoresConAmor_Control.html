@@ -194,7 +194,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
         <div class="card">
           <h3>&#x1F4DD; Registrar Movimiento</h3>
           <div class="form-group"><label>Tipo</label><select id="ne-tipo" onchange="onTipoChange()"><option value="Venta">Venta</option><option value="Gasto">Gasto</option><option value="Pago Deuda">Pago Deuda</option></select></div>
-          <div class="form-group"><label>Fecha</label><input type="date" id="ne-fecha"></div>
+          <div class="form-group"><label>Fecha</label><input type="date" id="ne-fecha" onchange="renderCarritoVenta()"></div>
           <div class="form-group" id="ne-prod-group"><label>Producto</label><select id="ne-producto" onchange="onProductoChange()"><option value="">&#x2014; Seleccionar &#x2014;</option></select></div>
           <div class="form-group"><label>Descripci&oacute;n</label><input type="text" id="ne-descripcion" placeholder="Descripci&oacute;n del movimiento"></div>
           <div class="form-group" id="ne-qty-group"><label>Cantidad</label><input type="number" id="ne-cantidad" value="1" min="1" oninput="calcTotal()"></div>
@@ -256,7 +256,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
         <div class="card"><h3>&#x1F517; Conexi&oacute;n Google Sheets</h3><div class="form-group"><label>URL del Apps Script</label><input type="text" id="cfg-gasurl" placeholder="https://script.google.com/..."></div><button class="btn btn-primary" onclick="guardarGasUrl()">Guardar URL</button><button class="btn btn-secondary" style="margin-left:8px;" onclick="probarConexion()">Probar</button><div id="gas-status" style="margin-top:10px;font-size:.88rem;"></div></div>
         <div class="card"><h3>&#x1F4AC; Mensajes WhatsApp</h3>
           <div class="form-group"><label>Prefijo pa&iacute;s (sin +)</label><input type="text" id="cfg-waprefijo" placeholder="57" maxlength="5"><small>Colombia=57 &middot; M&eacute;xico=52</small></div>
-          <div class="form-group"><label>Mensaje al vender (contado)</label><textarea id="cfg-wamsg" rows="3"></textarea><small>Variables: {nombre} {producto} {total} {ptsGanados} {ptsTotales} {recibo}</small></div>
+          <div class="form-group"><label>Mensaje al vender (contado)</label><textarea id="cfg-wamsg" rows="3"></textarea><small>Variables: {nombre} {producto} {total} {ptsGanados} {ptsTotales} {recibo} {recibo}</small></div>
           <div class="form-group"><label>Recordatorio de cobro</label><textarea id="cfg-wacobro" rows="3"></textarea><small>Variables: {nombre} {fecha} {valor}</small></div>
           <div class="form-group"><label>Mensaje Puntos Dulces</label><textarea id="cfg-wapuntos" rows="3"></textarea><small>Variables: {nombre} {puntos} {descuento} {fecha}</small></div>
           <div class="form-group"><label>Mensaje Postventa</label><textarea id="cfg-wapostventa" rows="3"></textarea><small>Variable: {nombre}</small></div>
@@ -672,18 +672,84 @@ function renderCarritoVenta() {
     return;
   }
   box.classList.add('show');
-  lista.innerHTML=neItems.map(function(it,i){
+  var fechaRaw=document.getElementById('ne-fecha').value;
+  var fecha=fechaRaw?fechaRaw.split('T')[0]:fechaHoy();
+  var itemsVista=aplicarPromociones(neItems,fecha);
+  lista.innerHTML=itemsVista.map(function(it,i){
+    var idxBase=it.promo?-1:neItems.indexOf(neItems.filter(function(x){return !x.promo;})[i]);
+    if(!it.promo){
+      // localizar por identidad de campos en neItems para conservar el botón quitar
+      idxBase=-1;
+      for(var k=0;k<neItems.length;k++){
+        if(neItems[k]===it){idxBase=k;break;}
+      }
+    }
     return '<div class="multi-cart-item">'
-      +'<div><div class="multi-cart-name">'+it.nombre+'</div>'
-      +'<div class="multi-cart-meta">'+it.cantidad+' × $'+fmt(it.valor)+'</div></div>'
+      +'<div><div class="multi-cart-name">'+it.nombre+(it.promo?' 🎁':'')+'</div>'
+      +'<div class="multi-cart-meta">'+it.cantidad+' × $'+fmt(it.valor)+(it.promo?' · Promo automática':'')+'</div></div>'
       +'<div class="multi-cart-total">$'+fmt(it.total)+'</div>'
-      +'<button type="button" class="multi-cart-remove" onclick="quitarProductoVenta('+i+')" title="Quitar">&#x2715;</button>'
+      +(it.promo?'':'<button type="button" class="multi-cart-remove" onclick="quitarProductoVenta('+i+')" title="Quitar">&#x2715;</button>')
       +'</div>';
   }).join('');
-  var unidades=neItems.reduce(function(a,it){return a+(parseFloat(it.cantidad)||0);},0);
-  var total=neItems.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0);
+  var unidades=itemsVista.reduce(function(a,it){return a+(parseFloat(it.cantidad)||0);},0);
+  var total=itemsVista.reduce(function(a,it){return a+(parseFloat(it.total)||0);},0);
   if(lbl) lbl.textContent=neItems.length+' producto'+(neItems.length===1?'':'s')+' · '+unidades+' unidad'+(unidades===1?'':'es');
   if(totalEl) totalEl.textContent='$'+fmt(total);
+}
+
+function fechaPromoValida(p, fecha) {
+  if(String(p.activa||'NO').toUpperCase()!=='SI') return false;
+  var f=String(fecha||fechaHoy()).split('T')[0];
+  var ini=String(p.fechaInicio||'').split('T')[0];
+  var fin=String(p.fechaFin||'').split('T')[0];
+  if(ini && f<ini) return false;
+  if(fin && f>fin) return false;
+  return true;
+}
+
+function aplicarPromociones(items, fecha) {
+  var base=items.filter(function(it){return !it.promo;}).map(function(it){
+    return {
+      productoId:it.productoId||'', nombre:it.nombre||'', cantidad:parseFloat(it.cantidad)||0,
+      valor:parseFloat(it.valor)||0, total:parseFloat(it.total)||0
+    };
+  });
+  var regalos=[];
+
+  (db.promociones||[]).forEach(function(p){
+    if(!fechaPromoValida(p,fecha)) return;
+    var gatillo=String(p.productoGatilloId||'');
+    var regaloId=String(p.productoRegaloId||'');
+    if(!gatillo||!regaloId) return;
+
+    var unidades=base.reduce(function(a,it){
+      return a+(String(it.productoId)===gatillo?(parseFloat(it.cantidad)||0):0);
+    },0);
+
+    var cada=parseFloat(p.cantidadGatillo)||1;
+    var cantRegalo=parseFloat(p.cantidadRegalo)||1;
+    var veces=Math.floor(unidades/cada);
+    if(veces<=0) return;
+
+    var prodRegalo=null;
+    for(var i=0;i<db.productos.length;i++){
+      if(String(db.productos[i].id)===regaloId){prodRegalo=db.productos[i];break;}
+    }
+    if(!prodRegalo) return;
+
+    regalos.push({
+      productoId:regaloId,
+      nombre:prodRegalo.nombre,
+      cantidad:veces*cantRegalo,
+      valor:0,
+      total:0,
+      promo:true,
+      promoId:p.id||'',
+      promoNombre:p.nombre||''
+    });
+  });
+
+  return base.concat(regalos);
 }
 
 function obtenerItemsVentaParaGuardar() {
@@ -691,10 +757,11 @@ function obtenerItemsVentaParaGuardar() {
   var actual=productoActualVenta();
   if(actual){
     // Mantiene intacto el flujo anterior: si no se usó el carrito, Guardar toma el producto actual.
-    // Si ya hay líneas, también incorpora la última línea que quedó diligenciada.
-    items.push(actual);
+    if(!actual.promo) items.push(actual);
   }
-  return items;
+  var fechaRaw=document.getElementById('ne-fecha').value;
+  var fecha=fechaRaw?fechaRaw.split('T')[0]:fechaHoy();
+  return aplicarPromociones(items,fecha);
 }
 
 function resumenItemsVenta(items) {
@@ -704,7 +771,7 @@ function resumenItemsVenta(items) {
 
 function resumenItemsWhatsApp(items) {
   return items.map(function(it){
-    return '• '+(it.cantidad||1)+' × '+it.nombre+' — $'+fmt(it.total||0);
+    return '• '+(it.cantidad||1)+' × '+it.nombre+' — $'+fmt(it.total||0)+(it.promo?' 🎁':'');
   }).join('\n');
 }
 
@@ -2055,10 +2122,16 @@ function canjearDescuento() {
 }
 
 function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales, recibo) {
-  return (db.config.waMsgTemplate||'Hola {nombre}!')
+  var tpl=db.config.waMsgTemplate||'';
+  // Compatibilidad: si la plantilla antigua no contempla recibo e items,
+  // se usa el formato transaccional solicitado sin borrar la configuración guardada.
+  if(tpl.indexOf('{recibo}')<0 || tpl.indexOf('{producto}')<0){
+    tpl='Hola {nombre} 🍫\n\nGracias por tu compra:\nRecibo #{recibo}\n\n{producto}\n\nTotal: ${total}\n\nGanaste {ptsGanados} Puntos Dulces ❤️';
+  }
+  return tpl
     .replace(/\{nombre\}/g,nombre||'')
     .replace(/\{producto\}/g,producto||'')
-    .replace(/\{total\}/g,total?fmt(total):'')
+    .replace(/\{total\}/g,total!==undefined&&total!==null?fmt(total):'')
     .replace(/\{ptsGanados\}/g,ptsGanados||'0')
     .replace(/\{ptsTotales\}/g,ptsTotales||'0')
     .replace(/\{recibo\}/g,recibo||'');
