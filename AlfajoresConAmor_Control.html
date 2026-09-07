@@ -679,6 +679,12 @@ function resumenItemsVenta(items) {
   return items.map(function(it){return (it.cantidad||1)+'× '+it.nombre;}).join(' + ');
 }
 
+function resumenItemsWhatsApp(items) {
+  return items.map(function(it){
+    return '• '+(it.cantidad||1)+' × '+it.nombre+' — $'+fmt(it.total||0);
+  }).join('\n');
+}
+
 /* ===================== SUGERENCIAS CLIENTE ===================== */
 function buscarClienteSugerencia(q) {
   var box=document.getElementById('cliente-suggestions');
@@ -758,7 +764,7 @@ function guardarRecibo() {
         document.getElementById('modal-wa').classList.add('open');
       } else {
         var ptsT=getPuntos(cliente);
-        mostrarWaModal(cliente||'Cliente',tel,desc,total,pts,ptsT);
+        mostrarWaModal(cliente||'Cliente',tel,resumenItemsWhatsApp(items),total,pts,ptsT);
       }
     }
   }
