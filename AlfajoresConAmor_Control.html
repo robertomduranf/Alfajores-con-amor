@@ -274,6 +274,12 @@ tr:hover td{background:rgba(130,73,19,.04);}
         </div>
         <div class="card"><h3>&#x1F464; Gesti&oacute;n de Usuarios</h3><div id="usuarios-lista"></div><button class="btn btn-primary mt-8" onclick="abrirModalUsuario(null)">&#x2795; Nuevo Usuario</button></div>
         <div class="card" style="grid-column:span 2;"><h3>&#x1F6CD;&#xFE0F; Cat&aacute;logo de Productos</h3><div id="catalogo-lista"></div><button class="btn btn-primary mt-8" onclick="abrirModalProducto(null)">&#x2795; Nuevo Producto</button></div>
+        <div class="card" style="grid-column:span 2;">
+          <h3>&#x1F381; Promociones</h3>
+          <p style="color:#6b4226;font-size:.9rem;margin-bottom:14px;">Configura promociones por producto y vigencia. En esta etapa se guardan y administran, pero todav&iacute;a no se aplican autom&aacute;ticamente al carrito.</p>
+          <div id="promociones-lista"></div>
+          <button class="btn btn-primary mt-8" onclick="abrirModalPromocion(null)">&#x2795; Nueva Promoci&oacute;n</button>
+        </div>
         <div class="card" style="grid-column:span 2;"><h3>&#x1F4CC; Gastos Fijos Anuales</h3><div class="form-group"><label>A&ntilde;o</label><input type="number" id="gf-anio" value="2025" style="max-width:120px;"></div><div id="gf-lista"></div><div class="flex-end mt-8"><button class="btn btn-secondary" onclick="addGastoFijo()">&#x2795; Agregar Fila</button><button class="btn btn-primary" onclick="guardarGastosFijos()">Guardar Gastos Fijos</button></div></div>
       </div>
     </div>
@@ -281,6 +287,20 @@ tr:hover td{background:rgba(130,73,19,.04);}
 </div>
 
 <div class="modal-overlay" id="modal-producto"><div class="modal"><h3 id="modal-prod-title">Producto</h3><input type="hidden" id="mp-id"><div class="form-group"><label>Nombre</label><input type="text" id="mp-nombre"></div><div class="form-group"><label>Precio Venta ($)</label><input type="number" id="mp-precio"></div><div class="form-group"><label>Costo ($)</label><input type="number" id="mp-costo"></div><div class="form-group"><label>Categor&iacute;a</label><input type="text" id="mp-categoria"></div><div class="form-group"><label>Descripci&oacute;n</label><textarea id="mp-desc"></textarea></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-producto')">Cancelar</button><button class="btn btn-primary" onclick="guardarProducto()">Guardar</button></div></div></div>
+<div class="modal-overlay" id="modal-promocion"><div class="modal"><h3 id="modal-promo-title">Promoci&oacute;n</h3>
+  <input type="hidden" id="mpr-id">
+  <div class="form-group"><label>Nombre de la promoci&oacute;n</label><input type="text" id="mpr-nombre" placeholder="Ej: Caf&eacute; por Caja x7"></div>
+  <div class="form-group"><label>Estado</label><select id="mpr-activa"><option value="SI">Activa</option><option value="NO">Inactiva</option></select></div>
+  <div class="grid-2">
+    <div class="form-group"><label>Fecha inicio</label><input type="date" id="mpr-inicio"></div>
+    <div class="form-group"><label>Fecha fin</label><input type="date" id="mpr-fin"></div>
+  </div>
+  <div class="form-group"><label>Producto que activa la promoci&oacute;n</label><select id="mpr-gatillo"></select></div>
+  <div class="form-group"><label>Cantidad necesaria</label><input type="number" id="mpr-cant-gatillo" min="1" step="1" value="1"></div>
+  <div class="form-group"><label>Producto de regalo</label><select id="mpr-regalo"></select></div>
+  <div class="form-group"><label>Cantidad de regalo</label><input type="number" id="mpr-cant-regalo" min="1" step="1" value="1"></div>
+  <div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-promocion')">Cancelar</button><button class="btn btn-primary" onclick="guardarPromocion()">Guardar</button></div>
+</div></div>
 <div class="modal-overlay" id="modal-usuario"><div class="modal"><h3 id="modal-usr-title">Usuario</h3><input type="hidden" id="mu-id"><div class="form-group"><label>Nombre completo</label><input type="text" id="mu-nombre"></div><div class="form-group"><label>Username</label><input type="text" id="mu-username"></div><div class="form-group"><label>Contrase&ntilde;a</label><input type="password" id="mu-pass"></div><div class="form-group"><label>Rol</label><select id="mu-rol"><option value="vendedor">Vendedor</option><option value="admin">Administrador</option></select></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-usuario')">Cancelar</button><button class="btn btn-primary" onclick="guardarUsuario()">Guardar</button></div></div></div>
 <div class="modal-overlay" id="modal-wa"><div class="modal wa-modal"><div class="wa-icon">&#x1F4AC;</div><h3>&iexcl;Venta registrada!</h3><p>&iquest;Enviar mensaje a <strong id="wa-nombre-display">&mdash;</strong>?</p><div class="wa-preview" id="wa-preview-msg"></div><div class="modal-footer" style="justify-content:center;gap:14px;"><button class="btn btn-secondary" onclick="cerrarModal('modal-wa')">Omitir</button><button class="btn btn-wa" onclick="abrirWhatsApp()">&#x1F4F1; Abrir WhatsApp</button></div></div></div>
 <div class="modal-overlay" id="modal-alerta-cobro"><div class="modal"><h3>&#x23F0; Cobros para ma&ntilde;ana</h3><p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes tienen pagos programados para ma&ntilde;ana.</p><div id="alerta-cobro-lista"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-alerta-cobro')">Cerrar</button></div></div></div>
@@ -290,6 +310,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
 var db = {
   recibos: [],
   productos: [],
+  promociones: [],
   clientes: [],
   gastosFijos: {},
   deudores: [],
@@ -326,6 +347,7 @@ function saveDB() {
   try {
     localStorage.setItem('aca_recibos', JSON.stringify(db.recibos));
     localStorage.setItem('aca_productos', JSON.stringify(db.productos));
+    localStorage.setItem('aca_promociones', JSON.stringify(db.promociones));
     localStorage.setItem('aca_clientes', JSON.stringify(db.clientes));
     localStorage.setItem('aca_gastosFijos', JSON.stringify(db.gastosFijos));
     localStorage.setItem('aca_deudores', JSON.stringify(db.deudores));
@@ -338,6 +360,7 @@ function loadDB() {
   try {
     var r = localStorage.getItem('aca_recibos'); if(r) db.recibos = JSON.parse(r);
     var p = localStorage.getItem('aca_productos'); if(p) db.productos = JSON.parse(p);
+    var pr = localStorage.getItem('aca_promociones'); if(pr) db.promociones = JSON.parse(pr);
     var c = localStorage.getItem('aca_clientes'); if(c) db.clientes = JSON.parse(c);
     var g = localStorage.getItem('aca_gastosFijos'); if(g) db.gastosFijos = JSON.parse(g);
     var d = localStorage.getItem('aca_deudores'); if(d) db.deudores = JSON.parse(d);
@@ -407,9 +430,9 @@ function loginAs(user) {
   // Rescatar recibos LOCAL pendientes ANTES de limpiar
   var _localPendientes=db.recibos.filter(function(r){return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;});
   localStorage.removeItem('aca_recibos'); localStorage.removeItem('aca_clientes');
-  localStorage.removeItem('aca_productos'); localStorage.removeItem('aca_deudores');
+  localStorage.removeItem('aca_productos'); localStorage.removeItem('aca_promociones'); localStorage.removeItem('aca_deudores');
   localStorage.removeItem('aca_puntos'); localStorage.removeItem('aca_gastosFijos');
-  db.recibos=[]; db.clientes=[]; db.productos=[];
+  db.recibos=[]; db.clientes=[]; db.productos=[]; db.promociones=[];
   db.deudores=[]; db.puntos={}; db.gastosFijos={};
   document.getElementById('login-screen').style.display='none';
   document.getElementById('loading-screen').style.display='flex';
@@ -742,7 +765,7 @@ function guardarRecibo() {
   var pts=tipo==='Venta'&&cliente?Math.floor(total/1000)*(db.config.ptosPorMil||1):0;
 
   // Muestra modal WA después de guardar (solo admin)
-  function _afterSave(clienteId) {
+  function _afterSave(clienteId, reciboCodigo) {
     renderResumenHoy(); renderUltimas();
     if(btnG){btnG.disabled=false;btnG.textContent='Guardar \u2713';}
     if(isAdmin()&&tipo==='Venta'&&tel&&pago==='contado'){
@@ -764,7 +787,7 @@ function guardarRecibo() {
         document.getElementById('modal-wa').classList.add('open');
       } else {
         var ptsT=getPuntos(cliente);
-        mostrarWaModal(cliente||'Cliente',tel,resumenItemsWhatsApp(items),total,pts,ptsT,rec.recibo);
+        mostrarWaModal(cliente||'Cliente',tel,resumenItemsWhatsApp(items),total,pts,ptsT,reciboCodigo||'');
       }
     }
   }
@@ -813,7 +836,7 @@ function guardarRecibo() {
                 sincronizar('saveDeudor',db.deudores);
               }
               saveDB();
-              _afterSave(clienteId);
+              _afterSave(clienteId, rec.recibo);
             } else {
               // Servidor respondió con error — reintento automático en 3 segundos
               if(btnG) btnG.textContent='Reintentando...';
@@ -830,7 +853,7 @@ function guardarRecibo() {
                     }
                     saveDB();
                     if(rec.recibo.indexOf('LOCAL')===0) alert('\u26A0\uFE0F Guardado solo localmente. Verifica en Sheets o vuelve a intentarlo.');
-                    _afterSave(clienteId);
+                    _afterSave(clienteId, rec.recibo);
                   }).catch(function(){
                     rec.recibo='LOCAL-'+Date.now();
                     db.recibos.push(rec);
@@ -1355,6 +1378,7 @@ function initAdmin() {
   document.getElementById('cfg-bonodias').value=db.config.bonoDias||30;
   renderUsuariosAdmin();
   renderCatalogo();
+  renderPromocionesAdmin();
   renderGastosFijosAdmin();
 }
 
@@ -1527,6 +1551,96 @@ function eliminarProducto(id) {
   renderCatalogo();
   renderProductosSelect();
 }
+
+
+/* ===== PROMOCIONES — ETAPA 2: ADMINISTRACION ===== */
+function promoNombreProducto(id) {
+  for(var i=0;i<db.productos.length;i++) if(String(db.productos[i].id)===String(id)) return db.productos[i].nombre;
+  return 'Producto no encontrado';
+}
+
+function renderPromocionesAdmin() {
+  var lista=document.getElementById('promociones-lista');
+  if(!lista) return;
+  if(!db.promociones.length){
+    lista.innerHTML='<div style="padding:14px;background:#fff9f0;border-radius:8px;color:#a07040;font-size:.88rem;">A\u00fan no hay promociones configuradas.</div>';
+    return;
+  }
+  var html='';
+  db.promociones.forEach(function(p){
+    var activa=String(p.activa).toUpperCase()==='SI';
+    html+='<div class="client-card">'
+      +'<div class="client-header"><div><span class="client-name">'+p.nombre+'</span> '
+      +'<span class="badge '+(activa?'badge-admin':'badge-vendedor')+'">'+(activa?'Activa':'Inactiva')+'</span></div>'
+      +'<div class="client-actions"><button class="btn btn-secondary btn-sm" onclick="abrirModalPromocion(\''+p.id+'\')">&#x270F;&#xFE0F;</button>'
+      +'<button class="btn btn-danger btn-sm" onclick="eliminarPromocion(\''+p.id+'\')">&#x1F5D1;&#xFE0F;</button></div></div>'
+      +'<div style="font-size:.86rem;color:#6b4226;margin-top:8px;">Por cada <strong>'+p.cantidadGatillo+'</strong> × '+promoNombreProducto(p.productoGatilloId)
+      +' &rarr; <strong>'+p.cantidadRegalo+'</strong> × '+promoNombreProducto(p.productoRegaloId)+' &#x1F381;</div>'
+      +'<div style="font-size:.8rem;color:#a07040;margin-top:4px;">Vigencia: '+(p.fechaInicio||'Sin inicio')+' a '+(p.fechaFin||'Sin fin')+'</div></div>';
+  });
+  lista.innerHTML=html;
+}
+
+function llenarSelectProductosPromo(id, valor) {
+  var sel=document.getElementById(id);
+  sel.innerHTML='<option value="">\u2014 Seleccionar \u2014</option>';
+  db.productos.forEach(function(p){
+    var o=document.createElement('option'); o.value=p.id; o.textContent=p.nombre; sel.appendChild(o);
+  });
+  if(valor) sel.value=valor;
+}
+
+function abrirModalPromocion(id) {
+  var p=null;
+  if(id) for(var i=0;i<db.promociones.length;i++) if(String(db.promociones[i].id)===String(id)){p=db.promociones[i];break;}
+  document.getElementById('mpr-id').value=p?p.id:'';
+  document.getElementById('mpr-nombre').value=p?p.nombre:'';
+  document.getElementById('mpr-activa').value=p?p.activa:'SI';
+  document.getElementById('mpr-inicio').value=p?p.fechaInicio:'';
+  document.getElementById('mpr-fin').value=p?p.fechaFin:'';
+  document.getElementById('mpr-cant-gatillo').value=p?p.cantidadGatillo:1;
+  document.getElementById('mpr-cant-regalo').value=p?p.cantidadRegalo:1;
+  llenarSelectProductosPromo('mpr-gatillo',p?p.productoGatilloId:'');
+  llenarSelectProductosPromo('mpr-regalo',p?p.productoRegaloId:'');
+  document.getElementById('modal-promo-title').textContent=p?'Editar Promoci\u00f3n':'Nueva Promoci\u00f3n';
+  document.getElementById('modal-promocion').classList.add('open');
+}
+
+function guardarPromocion() {
+  var id=document.getElementById('mpr-id').value||('PROMO'+Date.now());
+  var nombre=document.getElementById('mpr-nombre').value.trim();
+  var activa=document.getElementById('mpr-activa').value;
+  var inicio=document.getElementById('mpr-inicio').value;
+  var fin=document.getElementById('mpr-fin').value;
+  var gatillo=document.getElementById('mpr-gatillo').value;
+  var regalo=document.getElementById('mpr-regalo').value;
+  var cantG=parseFloat(document.getElementById('mpr-cant-gatillo').value)||1;
+  var cantR=parseFloat(document.getElementById('mpr-cant-regalo').value)||1;
+  if(!nombre||!gatillo||!regalo){alert('Completa nombre, producto que activa y producto de regalo.');return;}
+  if(cantG<1||cantR<1){alert('Las cantidades deben ser de al menos 1.');return;}
+  if(inicio&&fin&&fin<inicio){alert('La fecha final no puede ser anterior a la fecha inicial.');return;}
+  var obj={id:id,nombre:nombre,activa:activa,fechaInicio:inicio,fechaFin:fin,productoGatilloId:gatillo,cantidadGatillo:cantG,productoRegaloId:regalo,cantidadRegalo:cantR};
+  var idx=-1;
+  for(var i=0;i<db.promociones.length;i++) if(String(db.promociones[i].id)===String(id)){idx=i;break;}
+  if(idx>=0) db.promociones[idx]=obj; else db.promociones.push(obj);
+  saveDB();
+  sincronizar('savePromociones',db.promociones,function(ok){
+    if(ok){ cerrarModal('modal-promocion'); renderPromocionesAdmin(); alert('Promoci\u00f3n guardada \u2713'); }
+    else alert('La promoci\u00f3n qued\u00f3 local, pero no se pudo guardar en Google Sheets. Revisa la conexi\u00f3n.');
+  });
+}
+
+function eliminarPromocion(id) {
+  if(!confirm('\u00bfEliminar esta promoci\u00f3n?')) return;
+  var anterior=db.promociones.slice();
+  db.promociones=db.promociones.filter(function(p){return String(p.id)!==String(id);});
+  saveDB();
+  sincronizar('savePromociones',db.promociones,function(ok){
+    if(!ok){ db.promociones=anterior; saveDB(); alert('No se pudo eliminar en Google Sheets. No se realizaron cambios.'); }
+    renderPromocionesAdmin();
+  });
+}
+
 
 /* ===== GASTOS FIJOS ===== */
 function renderGastosFijosAdmin() {
@@ -1768,6 +1882,15 @@ function cargarDesdeSheets(cb, _localPendientes) {
       }
       if (data.productos && data.productos.length) db.productos = data.productos.map(function(p){
         return { id:String(p.id), nombre:String(p.nombre), precio:parseFloat(p.precio)||0, costo:parseFloat(p.costo)||0, categoria:String(p.categoria||''), descripcion:String(p.descripcion||'') };
+      });
+      if (Array.isArray(data.promociones)) db.promociones = data.promociones.map(function(p){
+        function f(v){ var s=String(v||''); return s.indexOf('T')>=0?s.split('T')[0]:s; }
+        return {
+          id:String(p.id||''), nombre:String(p.nombre||''), activa:String(p.activa||'NO').toUpperCase()==='SI'?'SI':'NO',
+          fechaInicio:f(p.fechaInicio), fechaFin:f(p.fechaFin),
+          productoGatilloId:String(p.productoGatilloId||''), cantidadGatillo:parseFloat(p.cantidadGatillo)||1,
+          productoRegaloId:String(p.productoRegaloId||''), cantidadRegalo:parseFloat(p.cantidadRegalo)||1
+        };
       });
       if (data.clientes && data.clientes.length) db.clientes = data.clientes.map(function(c) {
         return {
