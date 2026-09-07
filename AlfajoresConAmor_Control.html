@@ -256,7 +256,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
         <div class="card"><h3>&#x1F517; Conexi&oacute;n Google Sheets</h3><div class="form-group"><label>URL del Apps Script</label><input type="text" id="cfg-gasurl" placeholder="https://script.google.com/..."></div><button class="btn btn-primary" onclick="guardarGasUrl()">Guardar URL</button><button class="btn btn-secondary" style="margin-left:8px;" onclick="probarConexion()">Probar</button><div id="gas-status" style="margin-top:10px;font-size:.88rem;"></div></div>
         <div class="card"><h3>&#x1F4AC; Mensajes WhatsApp</h3>
           <div class="form-group"><label>Prefijo pa&iacute;s (sin +)</label><input type="text" id="cfg-waprefijo" placeholder="57" maxlength="5"><small>Colombia=57 &middot; M&eacute;xico=52</small></div>
-          <div class="form-group"><label>Mensaje al vender (contado)</label><textarea id="cfg-wamsg" rows="3"></textarea><small>Variables: {nombre} {producto} {total} {ptsGanados} {ptsTotales}</small></div>
+          <div class="form-group"><label>Mensaje al vender (contado)</label><textarea id="cfg-wamsg" rows="3"></textarea><small>Variables: {nombre} {producto} {total} {ptsGanados} {ptsTotales} {recibo}</small></div>
           <div class="form-group"><label>Recordatorio de cobro</label><textarea id="cfg-wacobro" rows="3"></textarea><small>Variables: {nombre} {fecha} {valor}</small></div>
           <div class="form-group"><label>Mensaje Puntos Dulces</label><textarea id="cfg-wapuntos" rows="3"></textarea><small>Variables: {nombre} {puntos} {descuento} {fecha}</small></div>
           <div class="form-group"><label>Mensaje Postventa</label><textarea id="cfg-wapostventa" rows="3"></textarea><small>Variable: {nombre}</small></div>
@@ -764,7 +764,7 @@ function guardarRecibo() {
         document.getElementById('modal-wa').classList.add('open');
       } else {
         var ptsT=getPuntos(cliente);
-        mostrarWaModal(cliente||'Cliente',tel,resumenItemsWhatsApp(items),total,pts,ptsT);
+        mostrarWaModal(cliente||'Cliente',tel,resumenItemsWhatsApp(items),total,pts,ptsT,rec.recibo);
       }
     }
   }
@@ -1931,23 +1931,24 @@ function canjearDescuento() {
   alert('✓ Descuento del '+pct+'% aplicado. Se restaron '+umbral+' Puntos Dulces. El mensaje de canje se enviará al guardar.');
 }
 
-function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales) {
+function buildWaMsg(nombre, producto, total, ptsGanados, ptsTotales, recibo) {
   return (db.config.waMsgTemplate||'Hola {nombre}!')
     .replace(/\{nombre\}/g,nombre||'')
     .replace(/\{producto\}/g,producto||'')
     .replace(/\{total\}/g,total?fmt(total):'')
     .replace(/\{ptsGanados\}/g,ptsGanados||'0')
-    .replace(/\{ptsTotales\}/g,ptsTotales||'0');
+    .replace(/\{ptsTotales\}/g,ptsTotales||'0')
+    .replace(/\{recibo\}/g,recibo||'');
 }
 
-var waCurrentProducto='',waCurrentTotal=0,waCurrentPtsG=0,waCurrentPtsT=0;
+var waCurrentProducto='',waCurrentTotal=0,waCurrentPtsG=0,waCurrentPtsT=0,waCurrentRecibo='';
 var canjeAplicado=false,canjeData={};
-function mostrarWaModal(nombre,tel,producto,total,ptsG,ptsT) {
+function mostrarWaModal(nombre,tel,producto,total,ptsG,ptsT,recibo) {
   waCurrentTel=tel;waCurrentNombre=nombre;
   waCurrentProducto=producto||'';waCurrentTotal=total||0;
-  waCurrentPtsG=ptsG||0;waCurrentPtsT=ptsT||0;
+  waCurrentPtsG=ptsG||0;waCurrentPtsT=ptsT||0;waCurrentRecibo=recibo||'';
   document.getElementById('wa-nombre-display').textContent=nombre;
-  document.getElementById('wa-preview-msg').textContent=buildWaMsg(nombre,producto,total,ptsG,ptsT);
+  document.getElementById('wa-preview-msg').textContent=buildWaMsg(nombre,producto,total,ptsG,ptsT,recibo);
   document.getElementById('modal-wa').classList.add('open');
 }
 
@@ -1957,7 +1958,7 @@ function abrirWhatsApp() {
     window._tempWaMsg=null; window._tempWaTel=null;
   } else {
     var tel=(db.config.waPrefijo||'57')+waCurrentTel.replace(/\D/g,'');
-    var msg=encodeURIComponent(buildWaMsg(waCurrentNombre,waCurrentProducto,waCurrentTotal,waCurrentPtsG,waCurrentPtsT));
+    var msg=encodeURIComponent(buildWaMsg(waCurrentNombre,waCurrentProducto,waCurrentTotal,waCurrentPtsG,waCurrentPtsT,waCurrentRecibo));
     window.open('https://wa.me/'+tel+'?text='+msg,'_blank');
   }
   canjeAplicado=false; canjeData={};
