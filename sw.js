@@ -1,155 +1,157 @@
 // ============================================================
-//  SERVICE WORKER — Alfajores con Amor PWA
-//  Maneja caché offline + notificaciones de cobro
+// ALFAJORES CON AMOR - FINCONTROL
+// SERVICE WORKER
+// ETAPA 3B
+// Cache: 1.3.13
 // ============================================================
 
-var CACHE_NAME = 'aca-V.a 1.3.12';
-var ASSETS = [
+var CACHE_NAME = 'aca-V.a 1.3.13';
+
+var URLS_TO_CACHE = [
   './',
   './AlfajoresConAmor_Control.html',
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
-  './logo.png'
+  './logo.png',
+  './logo-header.png'
 ];
 
-// ===== INSTALL: cachear archivos =====
-self.addEventListener('install', function(e) {
-  e.waitUntil(
-    caches.open(CACHE_NAME).then(function(cache) {
-      // Solo cachear assets locales uno a uno para evitar fallos
-      var promises = ASSETS.map(function(url) {
-        return cache.add(url).catch(function(err) {
-          console.warn('Cache skip:', url, err);
-        });
-      });
-      return Promise.all(promises);
-    }).then(function() {
-      return self.skipWaiting();
-    })
+// ============================================================
+// INSTALACIÓN
+// Guarda los archivos principales de la PWA en caché.
+// ============================================================
+
+self.addEventListener('install', function(event) {
+
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        return cache.addAll(URLS_TO_CACHE);
+      })
   );
+
+  self.skipWaiting();
 });
 
-// ===== ACTIVATE: limpiar cachés viejos =====
-self.addEventListener('activate', function(e) {
-  e.waitUntil(
-    caches.keys().then(function(keys) {
-      return Promise.all(
-        keys.filter(function(k) { return k !== CACHE_NAME; })
-            .map(function(k) { return caches.delete(k); })
-      );
-    }).then(function() {
-      return self.clients.claim();
-    })
+
+// ============================================================
+// ACTIVACIÓN
+// Elimina versiones antiguas del caché.
+// ============================================================
+
+self.addEventListener('activate', function(event) {
+
+  event.waitUntil(
+    caches.keys()
+      .then(function(cacheNames) {
+
+        return Promise.all(
+          cacheNames.map(function(cacheName) {
+
+            if (cacheName !== CACHE_NAME) {
+              return caches.delete(cacheName);
+            }
+
+          })
+        );
+
+      })
   );
+
+  self.clients.claim();
 });
 
-// ===== FETCH: servir desde caché, actualizar en background =====
-self.addEventListener('fetch', function(e) {
-  if (e.request.method !== 'GET') return;
 
-  // No cachear URLs externas (Google, CDN, etc.)
-  var url = e.request.url;
+// ============================================================
+// FETCH
+// ============================================================
 
-  if (url.indexOf('script.google.com') >= 0 ||
-      url.indexOf('googleusercontent.com') >= 0 ||
-      url.indexOf('googleapis.com') >= 0 ||
-      url.indexOf('cdn.jsdelivr.net') >= 0 ||
-      url.indexOf('cdnjs.cloudflare.com') >= 0) return;
+self.addEventListener('fetch', function(event) {
 
-  e.respondWith(
-    caches.open(CACHE_NAME).then(function(cache) {
-      return cache.match(e.request).then(function(cached) {
-        var fetchPromise = fetch(e.request).then(function(response) {
-          if (response && response.status === 200) {
-            cache.put(e.request, response.clone());
-          }
-          return response;
-        }).catch(function() {
-          return cached;
-        });
+  var request = event.request;
+  var url = request.url;
 
-        return cached || fetchPromise;
-      });
-    })
-  );
-});
+  // ----------------------------------------------------------
+  // IMPORTANTE:
+  // Las conexiones con Google Apps Script y sus redirecciones
+  // NO deben pasar por el caché del Service Worker.
+  //
+  // googleusercontent.com es especialmente importante para
+  // dispositivos móviles porque Apps Script puede redirigir
+  // las respuestas hacia ese dominio.
+  // ----------------------------------------------------------
 
-// ===== NOTIFICACIONES PUSH =====
-self.addEventListener('push', function(e) {
-  var data = {};
-
-  try {
-    data = e.data.json();
-  } catch(err) {}
-
-  var title = data.title || 'Alfajores con Amor';
-
-  var options = {
-    body: data.body || 'Tienes cobros pendientes para hoy.',
-    icon: './icon-192.png',
-    badge: './icon-192.png',
-    tag: data.tag || 'aca-cobro',
-    data: {
-      url: data.url || './AlfajoresConAmor_Control.html'
-    },
-    actions: [
-      { action: 'ver', title: 'Ver deudores' },
-      { action: 'cerrar', title: 'Cerrar' }
-    ],
-    requireInteraction: true
-  };
-
-  e.waitUntil(
-    self.registration.showNotification(title, options)
-  );
-});
-
-// ===== CLICK EN NOTIFICACIÓN =====
-self.addEventListener('notificationclick', function(e) {
-  e.notification.close();
-
-  if (e.action === 'cerrar') return;
-
-  var url =
-    (e.notification.data && e.notification.data.url) ||
-    './AlfajoresConAmor_Control.html';
-
-  e.waitUntil(
-    clients.matchAll({
-      type: 'window',
-      includeUncontrolled: true
-    }).then(function(clientList) {
-
-      for (var i = 0; i < clientList.length; i++) {
-        var client = clientList[i];
-
-        if (client.focus) {
-          client.focus();
-          client.navigate(url);
-          return;
-        }
-      }
-
-      return clients.openWindow(url);
-    })
-  );
-});
-
-// ===== VERIFICACIÓN DIARIA DE COBROS (Background Sync) =====
-self.addEventListener('sync', function(e) {
-  if (e.tag === 'check-cobros') {
-    e.waitUntil(checkCobrosManana());
+  if (
+    url.indexOf('script.google.com') >= 0 ||
+    url.indexOf('googleusercontent.com') >= 0 ||
+    url.indexOf('googleapis.com') >= 0 ||
+    url.indexOf('cdnjs.cloudflare.com') >= 0 ||
+    url.indexOf('cdn.jsdelivr.net') >= 0 ||
+    url.indexOf('fonts.googleapis.com') >= 0 ||
+    url.indexOf('fonts.gstatic.com') >= 0
+  ) {
+    return;
   }
-});
 
-function checkCobrosManana() {
-  // Lee los deudores del cliente via mensaje
-  return self.clients.matchAll().then(function(clientList) {
-    if (clientList.length > 0) {
-      clientList[0].postMessage({
-        tipo: 'CHECK_COBROS'
-      });
-    }
-  });
-}
+
+  // ----------------------------------------------------------
+  // Solo procesamos solicitudes GET.
+  // ----------------------------------------------------------
+
+  if (request.method !== 'GET') {
+    return;
+  }
+
+
+  // ----------------------------------------------------------
+  // Estrategia:
+  // CACHE FIRST + actualización desde red.
+  // ----------------------------------------------------------
+
+  event.respondWith(
+
+    caches.match(request)
+      .then(function(cachedResponse) {
+
+        var networkFetch = fetch(request)
+          .then(function(networkResponse) {
+
+            if (
+              networkResponse &&
+              networkResponse.status === 200 &&
+              networkResponse.type !== 'opaque'
+            ) {
+
+              var responseClone = networkResponse.clone();
+
+              caches.open(CACHE_NAME)
+                .then(function(cache) {
+                  cache.put(request, responseClone);
+                });
+
+            }
+
+            return networkResponse;
+
+          })
+          .catch(function() {
+
+            return cachedResponse;
+
+          });
+
+
+        // Si existe en caché, responder inmediatamente.
+        if (cachedResponse) {
+          return cachedResponse;
+        }
+
+        // Si no existe, consultar Internet.
+        return networkFetch;
+
+      })
+
+  );
+
+});
