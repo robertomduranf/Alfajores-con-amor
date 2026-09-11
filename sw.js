@@ -2,10 +2,10 @@
 // ALFAJORES CON AMOR - FINCONTROL
 // SERVICE WORKER
 // ETAPA 3B
-// Cache: 1.3.19
+// Cache: 1.3.20
 // ============================================================
 
-var CACHE_NAME = 'aca-V.a 1.3.19';
+var CACHE_NAME = 'aca-V.a 1.3.20';
 
 var URLS_TO_CACHE = [
   './',
