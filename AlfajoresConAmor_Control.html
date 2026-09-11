@@ -2243,7 +2243,6 @@ function cargarDesdeSheets(cb, _localPendientes) {
           if (numKeys.indexOf(k) >= 0) db.config[k] = parseFloat(data.config[k])||0;
           else db.config[k] = data.config[k];
         });
-      });
       }
       saveDB();
       if(cb) cb(true);
