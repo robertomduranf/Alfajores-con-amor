@@ -424,11 +424,15 @@ function doLogin() {
     return;
   }
 
-  var loginData = encodeURIComponent(JSON.stringify({username:u,password:p}));
-  fetch(url+'?accion=login&data='+loginData, {
-    method:'GET',
+  fetch(url, {
+    method:'POST',
     redirect:'follow',
-    cache:'no-store'
+    cache:'no-store',
+    headers:{'Content-Type':'text/plain;charset=UTF-8'},
+    body:JSON.stringify({
+      accion:'login',
+      data:{username:u,password:p}
+    })
   })
     .then(function(r){return r.json();})
     .then(function(d){
