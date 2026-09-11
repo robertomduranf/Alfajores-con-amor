@@ -310,6 +310,7 @@ tr:hover td{background:rgba(130,73,19,.04);}
 // URL pública del Web App. No contiene datos ni credenciales.
 // Debe existir antes del login; la autenticación del backend protege las acciones privadas.
 var API_URL = 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec';
+var EXPECTED_BACKEND_VERSION = 'SEC-1.4.0';
 
 var db = {
   recibos: [],
@@ -381,8 +382,8 @@ function getAuthToken() {
   return localStorage.getItem('aca_token') || '';
 }
 
-function authQuery() {
-  var token = getAuthToken();
+function authQuery(tokenOverride) {
+  var token = tokenOverride || getAuthToken();
   return token ? '&token=' + encodeURIComponent(token) : '';
 }
 
@@ -395,61 +396,60 @@ function limpiarSesionLocal() {
 function manejarNoAutorizado(data) {
   if (!data || (data.code !== 'UNAUTHORIZED' && data.code !== 'FORBIDDEN')) return false;
 
+  if (data.backendVersion && data.backendVersion !== EXPECTED_BACKEND_VERSION) {
+    alert('Versiones incompatibles.\n\nPWA: '+EXPECTED_BACKEND_VERSION+'\nBackend: '+data.backendVersion);
+    return true;
+  }
+
   if (data.code === 'UNAUTHORIZED') {
     limpiarSesionLocal();
     document.getElementById('app').style.display='none';
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('login-screen').style.display='flex';
-    alert('Tu sesión venció. Ingresa nuevamente.');
+    alert('Tu sesión no es válida. Ingresa nuevamente.');
   } else {
     alert('No tienes permiso para realizar esta acción.');
   }
-
   return true;
 }
 
 function doLogin() {
-  var u = document.getElementById('li-user').value.trim();
-  var p = document.getElementById('li-pass').value;
-
-  if(!u || !p) return;
+  var u=document.getElementById('li-user').value.trim();
+  var p=document.getElementById('li-pass').value;
+  if(!u||!p) return;
 
   var btn=document.querySelector('.btn-login');
   if(btn){btn.disabled=true;btn.textContent='Verificando...';}
 
-  var url=API_URL;
-  if(!url){
-    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
-    document.getElementById('login-error').style.display='block';
-    return;
-  }
-
-  fetch(url, {
+  fetch(API_URL,{
     method:'POST',
     redirect:'follow',
     cache:'no-store',
     headers:{'Content-Type':'text/plain;charset=UTF-8'},
-    body:JSON.stringify({
-      accion:'login',
-      data:{username:u,password:p}
-    })
+    body:JSON.stringify({accion:'login',data:{username:u,password:p}})
   })
-    .then(function(r){return r.json();})
-    .then(function(d){
-      if(btn){btn.disabled=false;btn.textContent='Ingresar';}
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
 
-      if(d.status==='ok' && d.token && d.user){
-        document.getElementById('login-error').style.display='none';
-        document.getElementById('li-pass').value='';
-        loginAs(d.user, d.token);
-      } else {
-        document.getElementById('login-error').style.display='block';
-      }
-    })
-    .catch(function(){
-      if(btn){btn.disabled=false;btn.textContent='Ingresar';}
+    if(d.backendVersion!==EXPECTED_BACKEND_VERSION){
+      alert('Backend incorrecto o desactualizado.\n\nPWA: '+EXPECTED_BACKEND_VERSION+'\nBackend: '+String(d.backendVersion||'sin versión'));
+      return;
+    }
+
+    if(d.status==='ok'&&d.token&&d.user){
+      document.getElementById('login-error').style.display='none';
+      document.getElementById('li-pass').value='';
+      loginAs(d.user,d.token);
+    }else{
       document.getElementById('login-error').style.display='block';
-    });
+    }
+  })
+  .catch(function(err){
+    console.warn('login error:',err);
+    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
+    document.getElementById('login-error').style.display='block';
+  });
 }
 
 document.getElementById('li-pass').addEventListener('keydown',function(e){
@@ -460,17 +460,16 @@ document.getElementById('li-user').addEventListener('keydown',function(e){
 });
 
 function loginAs(user, token) {
-  db.currentUser = {
+  db.currentUser={
     id:String(user.id||''),
     nombre:String(user.nombre||''),
     username:String(user.username||''),
     rol:String(user.rol||'vendedor')
   };
 
-  if(token) localStorage.setItem('aca_token', token);
-  localStorage.setItem('aca_session', JSON.stringify(db.currentUser));
+  if(token) localStorage.setItem('aca_token',token);
+  localStorage.setItem('aca_session',JSON.stringify(db.currentUser));
 
-  // Rescatar recibos LOCAL pendientes ANTES de limpiar.
   var _localPendientes=db.recibos.filter(function(r){
     return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;
   });
@@ -483,32 +482,25 @@ function loginAs(user, token) {
   localStorage.removeItem('aca_puntos');
   localStorage.removeItem('aca_gastosFijos');
 
-  db.recibos=[];
-  db.clientes=[];
-  db.productos=[];
-  db.promociones=[];
-  db.deudores=[];
-  db.puntos={};
-  db.gastosFijos={};
+  db.recibos=[];db.clientes=[];db.productos=[];db.promociones=[];
+  db.deudores=[];db.puntos={};db.gastosFijos={};
 
   document.getElementById('login-screen').style.display='none';
   document.getElementById('loading-screen').style.display='flex';
 
-  cargarDesdeSheets(function(ok) {
+  cargarDesdeSheets(function(ok){
     document.getElementById('loading-screen').style.display='none';
-
-    if(!ok) {
+    if(!ok){
       document.getElementById('login-screen').style.display='flex';
       return;
     }
-
     document.getElementById('app').style.display='flex';
     document.getElementById('user-badge').textContent=db.currentUser.nombre+' | '+db.currentUser.rol;
     applyRoleUI(db.currentUser.rol);
     initApp();
     checkAlertasCobro();
     checkAlertasCumple();
-  }, _localPendientes);
+  },_localPendientes,token);
 }
 
 function doLogout() {
@@ -2160,12 +2152,17 @@ loginAs = function(user) {
 
 
 /* ===================== CARGAR DESDE SHEETS ===================== */
-function cargarDesdeSheets(cb, _localPendientes) {
+function cargarDesdeSheets(cb, _localPendientes, authTokenOverride) {
   var url = API_URL;
   if (!url) { if(cb) cb(false); return; }
-  fetch(url + '?accion=getAll' + authQuery(), { method:'GET', redirect:'follow' })
+  fetch(url + '?accion=getAll' + authQuery(authTokenOverride), { method:'GET', redirect:'follow', cache:'no-store' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
+      if (data.backendVersion && data.backendVersion !== EXPECTED_BACKEND_VERSION) {
+        alert('Versiones incompatibles.\n\nPWA: '+EXPECTED_BACKEND_VERSION+'\nBackend: '+data.backendVersion);
+        if(cb) cb(false);
+        return;
+      }
       if (manejarNoAutorizado(data)) { if(cb) cb(false); return; }
       if (data.status !== 'ok') { if(cb) cb(false); return; }
       if (Array.isArray(data.recibos)) {
@@ -2409,42 +2406,39 @@ function agregarReferidoId(clienteId) {
 loadDB();
 // Fuente de verdad unica: la URL del HTML siempre tiene prioridad sobre localStorage
 db.config.gasUrl='https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec';
-// Restaurar sesión únicamente si el token sigue siendo válido en servidor.
-(function() {
-  var token = localStorage.getItem('aca_token') || '';
-  var saved = localStorage.getItem('aca_session');
+// Restaurar sesión sólo si el token existente sigue siendo válido.
+(function(){
+  var tokenSnapshot=localStorage.getItem('aca_token')||'';
+  var savedSnapshot=localStorage.getItem('aca_session');
 
-  if (!token || !saved) {
+  if(!tokenSnapshot||!savedSnapshot){
     limpiarSesionLocal();
     return;
   }
 
-  try {
-    var url = API_URL;
+  fetch(API_URL+'?accion=validarSesion&token='+encodeURIComponent(tokenSnapshot),{
+    method:'GET',redirect:'follow',cache:'no-store'
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    // Una respuesta vieja nunca puede borrar un login nuevo.
+    if(getAuthToken()!==tokenSnapshot) return;
 
-    fetch(url+'?accion=validarSesion&token='+encodeURIComponent(token),{
-      method:'GET',
-      redirect:'follow'
-    })
-      .then(function(r){return r.json();})
-      .then(function(d){
-        if(d.status==='ok' && d.user){
-          loginAs(d.user, token);
-        } else {
-          limpiarSesionLocal();
-        }
-      })
-      .catch(function(){
-        // Por seguridad, sin validación del servidor no se reabre una sesión.
-        limpiarSesionLocal();
-      });
+    if(d.backendVersion!==EXPECTED_BACKEND_VERSION){
+      limpiarSesionLocal();
+      return;
+    }
 
-  } catch(e) {
-    limpiarSesionLocal();
-  }
+    if(d.status==='ok'&&d.user){
+      loginAs(d.user,tokenSnapshot);
+    }else{
+      limpiarSesionLocal();
+    }
+  })
+  .catch(function(){
+    if(getAuthToken()===tokenSnapshot) limpiarSesionLocal();
+  });
 })();
-
-
 </script>
 </body>
 </html>
