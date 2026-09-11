@@ -307,11 +307,6 @@ tr:hover td{background:rgba(130,73,19,.04);}
 <div class="modal-overlay" id="modal-alerta-cumple"><div class="modal"><h3>&#x1F382; Cumplea&ntilde;os hoy</h3><p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes cumplen a&ntilde;os hoy.</p><div id="alerta-cumple-lista"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-alerta-cumple')">Cerrar</button></div></div></div>
 
 <script>
-// URL pública del Web App. No contiene datos ni credenciales.
-// Debe existir antes del login; la autenticación del backend protege las acciones privadas.
-var API_URL = 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec';
-var EXPECTED_BACKEND_VERSION = 'SEC-1.4.0';
-
 var db = {
   recibos: [],
   productos: [],
@@ -321,7 +316,7 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec', // compatibilidad/configuración; la conexión usa API_URL
+    gasUrl: 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec', // sobreescrita en el boot — editar solo ahi
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
@@ -333,9 +328,13 @@ var db = {
     ptosReferido: 50,
     ptosUmbral: 100,
     descuentoPct: 10,
-    bonoDias: 30},
-  currentUser: null,
-  usuariosAdmin: []
+    bonoDias: 30,
+    usuarios: [
+      {id:'u1',nombre:'Katherine',username:'Katherine',password:'1818',rol:'admin'},
+      {id:'u2',nombre:'Roberto',username:'Roberto',password:'1313',rol:'admin'}
+    ]
+  },
+  currentUser: null
 };
 
 var waCurrentTel = '';
@@ -353,9 +352,7 @@ function saveDB() {
     localStorage.setItem('aca_gastosFijos', JSON.stringify(db.gastosFijos));
     localStorage.setItem('aca_deudores', JSON.stringify(db.deudores));
     localStorage.setItem('aca_puntos', JSON.stringify(db.puntos));
-    var cfgSeguro = Object.assign({}, db.config);
-    delete cfgSeguro.usuarios;
-    localStorage.setItem('aca_config', JSON.stringify(cfgSeguro));
+    localStorage.setItem('aca_config', JSON.stringify(db.config));
   } catch(e) { console.warn('saveDB', e); }
 }
 
@@ -372,149 +369,87 @@ function loadDB() {
     if(cfg) {
       var parsed = JSON.parse(cfg);
       db.config = Object.assign({}, db.config, parsed);
-      delete db.config.usuarios;
-}
+      if(!db.config.usuarios || !db.config.usuarios.length) {
+        db.config.usuarios = [
+          {id:'u1',nombre:'Katherine',username:'Katherine',password:'1818',rol:'admin'},
+          {id:'u2',nombre:'Roberto',username:'Roberto',password:'1313',rol:'admin'}
+        ];
+      }
+    }
   } catch(e) { console.warn('loadDB', e); }
 }
 
-/* ===================== AUTH SEGURA ===================== */
-function getAuthToken() {
-  return localStorage.getItem('aca_token') || '';
-}
-
-function authQuery(tokenOverride) {
-  var token = tokenOverride || getAuthToken();
-  return token ? '&token=' + encodeURIComponent(token) : '';
-}
-
-function limpiarSesionLocal() {
-  db.currentUser = null;
-  localStorage.removeItem('aca_session');
-  localStorage.removeItem('aca_token');
-}
-
-function manejarNoAutorizado(data) {
-  if (!data || (data.code !== 'UNAUTHORIZED' && data.code !== 'FORBIDDEN')) return false;
-
-  if (data.backendVersion && data.backendVersion !== EXPECTED_BACKEND_VERSION) {
-    alert('Versiones incompatibles.\n\nPWA: '+EXPECTED_BACKEND_VERSION+'\nBackend: '+data.backendVersion);
-    return true;
-  }
-
-  if (data.code === 'UNAUTHORIZED') {
-    limpiarSesionLocal();
-    document.getElementById('app').style.display='none';
-    document.getElementById('loading-screen').style.display='none';
-    document.getElementById('login-screen').style.display='flex';
-    alert('Tu sesión no es válida. Ingresa nuevamente.');
-  } else {
-    alert('No tienes permiso para realizar esta acción.');
-  }
-  return true;
-}
-
+/* ===================== AUTH ===================== */
 function doLogin() {
-  var u=document.getElementById('li-user').value.trim();
-  var p=document.getElementById('li-pass').value;
+  var u = document.getElementById('li-user').value.trim();
+  var p = document.getElementById('li-pass').value.trim();
   if(!u||!p) return;
-
   var btn=document.querySelector('.btn-login');
   if(btn){btn.disabled=true;btn.textContent='Verificando...';}
-
-  fetch(API_URL,{
-    method:'POST',
-    redirect:'follow',
-    cache:'no-store',
-    headers:{'Content-Type':'text/plain;charset=UTF-8'},
-    body:JSON.stringify({accion:'login',data:{username:u,password:p}})
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
-
-    if(d.backendVersion!==EXPECTED_BACKEND_VERSION){
-      alert('Backend incorrecto o desactualizado.\n\nPWA: '+EXPECTED_BACKEND_VERSION+'\nBackend: '+String(d.backendVersion||'sin versión'));
-      return;
+  var url=db.config.gasUrl||'';
+  function _validar(usuarios) {
+    var found=null;
+    for(var i=0;i<usuarios.length;i++){
+      var usr=usuarios[i];
+      if(usr.username.toLowerCase()===u.toLowerCase()&&String(usr.password)===String(p)){found=usr;break;}
     }
-
-    if(d.status==='ok'&&d.token&&d.user){
+    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
+    if(found){
+      // Actualizar lista local con la que vino de Sheets
+      db.config.usuarios=usuarios;
+      saveDB();
       document.getElementById('login-error').style.display='none';
-      document.getElementById('li-pass').value='';
-      loginAs(d.user,d.token);
-    }else{
+      loginAs(found);
+    } else {
       document.getElementById('login-error').style.display='block';
     }
-  })
-  .catch(function(err){
-    console.warn('login error:',err);
-    if(btn){btn.disabled=false;btn.textContent='Ingresar';}
-    document.getElementById('login-error').style.display='block';
-  });
+  }
+  if(url){
+    fetch(url+'?accion=getUsuarios',{method:'GET',redirect:'follow'})
+      .then(function(r){return r.json();})
+      .then(function(d){
+        if(d.status==='ok'&&d.usuarios&&d.usuarios.length){
+          _validar(d.usuarios);
+        } else {
+          _validar(db.config.usuarios); // fallback local
+        }
+      })
+      .catch(function(){
+        _validar(db.config.usuarios); // sin conexión: usar local
+      });
+  } else {
+    _validar(db.config.usuarios);
+  }
 }
+document.getElementById('li-pass').addEventListener('keydown',function(e){if(e.key==='Enter')doLogin();});
+document.getElementById('li-user').addEventListener('keydown',function(e){if(e.key==='Enter')document.getElementById('li-pass').focus();});
 
-document.getElementById('li-pass').addEventListener('keydown',function(e){
-  if(e.key==='Enter') doLogin();
-});
-document.getElementById('li-user').addEventListener('keydown',function(e){
-  if(e.key==='Enter') document.getElementById('li-pass').focus();
-});
-
-function loginAs(user, token) {
-  db.currentUser={
-    id:String(user.id||''),
-    nombre:String(user.nombre||''),
-    username:String(user.username||''),
-    rol:String(user.rol||'vendedor')
-  };
-
-  if(token) localStorage.setItem('aca_token',token);
-  localStorage.setItem('aca_session',JSON.stringify(db.currentUser));
-
-  var _localPendientes=db.recibos.filter(function(r){
-    return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;
-  });
-
-  localStorage.removeItem('aca_recibos');
-  localStorage.removeItem('aca_clientes');
-  localStorage.removeItem('aca_productos');
-  localStorage.removeItem('aca_promociones');
-  localStorage.removeItem('aca_deudores');
-  localStorage.removeItem('aca_puntos');
-  localStorage.removeItem('aca_gastosFijos');
-
-  db.recibos=[];db.clientes=[];db.productos=[];db.promociones=[];
-  db.deudores=[];db.puntos={};db.gastosFijos={};
-
+function loginAs(user) {
+  db.currentUser=user;
+  localStorage.setItem('aca_session', JSON.stringify(user));
+  // Rescatar recibos LOCAL pendientes ANTES de limpiar
+  var _localPendientes=db.recibos.filter(function(r){return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;});
+  localStorage.removeItem('aca_recibos'); localStorage.removeItem('aca_clientes');
+  localStorage.removeItem('aca_productos'); localStorage.removeItem('aca_promociones'); localStorage.removeItem('aca_deudores');
+  localStorage.removeItem('aca_puntos'); localStorage.removeItem('aca_gastosFijos');
+  db.recibos=[]; db.clientes=[]; db.productos=[]; db.promociones=[];
+  db.deudores=[]; db.puntos={}; db.gastosFijos={};
   document.getElementById('login-screen').style.display='none';
   document.getElementById('loading-screen').style.display='flex';
-
-  cargarDesdeSheets(function(ok){
+  cargarDesdeSheets(function(ok) {
     document.getElementById('loading-screen').style.display='none';
-    if(!ok){
-      document.getElementById('login-screen').style.display='flex';
-      return;
-    }
     document.getElementById('app').style.display='flex';
-    document.getElementById('user-badge').textContent=db.currentUser.nombre+' | '+db.currentUser.rol;
-    applyRoleUI(db.currentUser.rol);
+    document.getElementById('user-badge').textContent=user.nombre+' | '+user.rol;
+    applyRoleUI(user.rol);
     initApp();
     checkAlertasCobro();
     checkAlertasCumple();
-  },_localPendientes,token);
+  }, _localPendientes);
 }
 
 function doLogout() {
-  var url=API_URL;
-  var token=getAuthToken();
-
-  if(url && token){
-    fetch(url+'?accion=logout&token='+encodeURIComponent(token),{
-      method:'GET',
-      redirect:'follow'
-    }).catch(function(){});
-  }
-
-  limpiarSesionLocal();
+  db.currentUser=null;
+  localStorage.removeItem('aca_session');
   document.getElementById('app').style.display='none';
   document.getElementById('login-screen').style.display='flex';
   document.getElementById('li-user').value='';
@@ -523,20 +458,16 @@ function doLogout() {
 
 function applyRoleUI(rol) {
   var restricted=['historial','graficas','pyg','balance','ejecutivo','admin'];
-
   document.querySelectorAll('.tab-btn').forEach(function(b){
     var tab=b.getAttribute('data-tab');
     if(rol!=='admin'&&restricted.indexOf(tab)>=0) b.style.display='none';
     else b.style.display='';
   });
-
   var btnCsv=document.getElementById('btn-exportar-csv');
   if(btnCsv) btnCsv.style.display=rol==='admin'?'':'none';
 }
 
-function isAdmin() {
-  return !!(db.currentUser && db.currentUser.rol==='admin');
-}
+function isAdmin() { return !!(db.currentUser && db.currentUser.rol==='admin'); }
 
 /* ===================== ALERTAS COBRO ===================== */
 function checkAlertasCobro() {
@@ -636,7 +567,7 @@ function asegurarRecibosHistoricos(callback) {
     return;
   }
 
-  var url=API_URL;
+  var url=db.config.gasUrl||'';
   if(!url){ if(callback) callback(false); return; }
 
   // Preservar ventas locales todavía no sincronizadas.
@@ -644,10 +575,9 @@ function asegurarRecibosHistoricos(callback) {
     return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;
   });
 
-  cargaHistoricoEnCurso=fetch(url+'?accion=getRecibosHistoricos'+authQuery(),{method:'GET',redirect:'follow'})
+  cargaHistoricoEnCurso=fetch(url+'?accion=getRecibosHistoricos',{method:'GET',redirect:'follow'})
     .then(function(r){return r.json();})
     .then(function(data){
-      if(manejarNoAutorizado(data)) return false;
       if(data.status!=='ok'||!Array.isArray(data.recibos)) return false;
 
       db.recibos=normalizarRecibosCliente(data.recibos);
@@ -978,7 +908,7 @@ function guardarRecibo() {
   // Capturar canje ANTES de limpiarNE
   var localCanjeAplicado=canjeAplicado;
   var localCanjeData=canjeAplicado?{nombre:canjeData.nombre,pct:canjeData.pct,totalAntes:canjeData.totalAntes,totalDespues:canjeData.totalDespues,ptsCanjeados:canjeData.ptsCanjeados,ptsTotales:canjeData.ptsTotales,ptsGanados:canjeData.ptsGanados}:{};
-  var url=API_URL;
+  var url=db.config.gasUrl||'';
   var pts=tipo==='Venta'&&cliente?Math.floor(total/1000)*(db.config.ptosPorMil||1):0;
 
   // Muestra modal WA después de guardar (solo admin)
@@ -1041,11 +971,10 @@ function guardarRecibo() {
         clienteId:clienteId,cliente:cliente,tel:tel,responsable:db.currentUser.nombre,
         recibo:'',notas:notas,pago:pago,fechaCobro:fechaCobro,ts:Date.now()};
       if(url){
-        var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec))+authQuery();
+        var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
         fetch(url+params,{method:'GET',redirect:'follow'})
           .then(function(r){return r.json();})
           .then(function(d){
-            if(manejarNoAutorizado(d)) return;
             if(d.status==='ok'&&d.recibo){
               rec.recibo=d.recibo;
               db.recibos.push(rec);
@@ -1102,7 +1031,7 @@ function guardarRecibo() {
     };
 
     if(url){
-      var cp='?accion=saveClienteUno&data='+encodeURIComponent(JSON.stringify(clienteObj))+authQuery();
+      var cp='?accion=saveClienteUno&data='+encodeURIComponent(JSON.stringify(clienteObj));
       fetch(url+cp,{method:'GET',redirect:'follow'})
         .then(function(r){return r.json();})
         .then(function(d){
@@ -1118,7 +1047,7 @@ function guardarRecibo() {
       clienteId:'',cliente:'',tel:'',responsable:db.currentUser.nombre,
       recibo:'',notas:notas,pago:'contado',fechaCobro:'',ts:Date.now()};
     if(url){
-      var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec))+authQuery();
+      var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
       fetch(url+params,{method:'GET',redirect:'follow'})
         .then(function(r){return r.json();})
         .then(function(d){
@@ -1319,10 +1248,10 @@ function pagarDeuda(id) {
       };
       db.recibos.push(rec);
       saveDB();
-      var gasUrl=API_URL;
+      var gasUrl=db.config.gasUrl||'';
       if(gasUrl){
         var deudorId=id;
-        var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec))+authQuery();
+        var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec));
         fetch(gasUrl+params,{method:'GET',redirect:'follow'})
           .then(function(r){return r.json();})
           .then(function(d2){
@@ -1581,7 +1510,7 @@ function calcEjecutivo() {
 
 /* ===================== ADMIN ===================== */
 function initAdmin() {
-  document.getElementById('cfg-gasurl').value=API_URL;
+  document.getElementById('cfg-gasurl').value=db.config.gasUrl||'';
   document.getElementById('cfg-waprefijo').value=db.config.waPrefijo||'57';
   document.getElementById('cfg-wamsg').value=db.config.waMsgTemplate||'';
   document.getElementById('cfg-wacobro').value=db.config.waMsgCobro||'';
@@ -1594,7 +1523,7 @@ function initAdmin() {
   document.getElementById('cfg-ptosumbral').value=db.config.ptosUmbral||100;
   document.getElementById('cfg-descuento').value=db.config.descuentoPct||10;
   document.getElementById('cfg-bonodias').value=db.config.bonoDias||30;
-  cargarUsuariosAdmin();
+  renderUsuariosAdmin();
   renderCatalogo();
   renderPromocionesAdmin();
   renderGastosFijosAdmin();
@@ -1639,85 +1568,39 @@ function guardarPuntosConfig() {
 }
 
 /* ===== USUARIOS ===== */
-function cargarUsuariosAdmin() {
-  sincronizar('getUsuariosAdmin', {}, function(ok, d) {
-    if(!ok || !d || !Array.isArray(d.usuarios)) {
-      db.usuariosAdmin = [];
-      renderUsuariosAdmin();
-      return;
-    }
-
-    db.usuariosAdmin = d.usuarios.map(function(u){
-      return {
-        id:String(u.id||''),
-        nombre:String(u.nombre||''),
-        username:String(u.username||''),
-        rol:String(u.rol||'vendedor')
-      };
-    });
-
-    renderUsuariosAdmin();
-  });
-}
-
 function renderUsuariosAdmin() {
   var lista=document.getElementById('usuarios-lista');
   if(!lista) return;
-
-  if(!db.usuariosAdmin.length){
-    lista.innerHTML='<p style="color:#a07040;">Sin usuarios cargados.</p>';
-    return;
-  }
-
   var html='';
-
-  db.usuariosAdmin.forEach(function(u){
+  db.config.usuarios.forEach(function(u){
     html+='<div class="user-list-item">'
       +'<div class="user-info"><div class="user-avatar">'+u.nombre.charAt(0).toUpperCase()+'</div>'
       +'<div><strong>'+u.nombre+'</strong> <small style="color:#a07040;">@'+u.username+'</small><br>'
       +'<span class="badge '+(u.rol==='admin'?'badge-admin':'badge-vendedor')+'">'+u.rol+'</span></div></div>'
       +'<div style="display:flex;gap:6px;">'
       +'<button class="btn btn-secondary btn-sm" onclick="abrirModalUsuario(\''+u.id+'\')">&#x270F;&#xFE0F;</button>'
-      +(db.usuariosAdmin.length>1
-        ?'<button class="btn btn-danger btn-sm" onclick="eliminarUsuario(\''+u.id+'\')">&#x1F5D1;&#xFE0F;</button>'
-        :'')
+      +(db.config.usuarios.length>1?'<button class="btn btn-danger btn-sm" onclick="eliminarUsuario(\''+u.id+'\')">&#x1F5D1;&#xFE0F;</button>':'')
       +'</div></div>';
   });
-
   lista.innerHTML=html;
 }
 
 function abrirModalUsuario(id) {
   if(id){
     var u=null;
-
-    for(var i=0;i<db.usuariosAdmin.length;i++){
-      if(db.usuariosAdmin[i].id===id){
-        u=db.usuariosAdmin[i];
-        break;
-      }
-    }
-
+    for(var i=0;i<db.config.usuarios.length;i++){if(db.config.usuarios[i].id===id){u=db.config.usuarios[i];break;}}
     if(!u) return;
-
     document.getElementById('mu-id').value=u.id;
     document.getElementById('mu-nombre').value=u.nombre;
     document.getElementById('mu-username').value=u.username;
-    document.getElementById('mu-pass').value='';
-    document.getElementById('mu-pass').placeholder='Dejar vacío para conservar';
+    document.getElementById('mu-pass').value=u.password;
     document.getElementById('mu-rol').value=u.rol;
     document.getElementById('modal-usr-title').textContent='Editar Usuario';
-
   } else {
-    ['mu-id','mu-nombre','mu-username','mu-pass'].forEach(function(i){
-      document.getElementById(i).value='';
-    });
-
-    document.getElementById('mu-pass').placeholder='Mínimo 4 caracteres';
+    ['mu-id','mu-nombre','mu-username','mu-pass'].forEach(function(i){document.getElementById(i).value='';});
     document.getElementById('mu-rol').value='vendedor';
     document.getElementById('modal-usr-title').textContent='Nuevo Usuario';
   }
-
   document.getElementById('modal-usuario').classList.add('open');
 }
 
@@ -1725,57 +1608,29 @@ function guardarUsuario() {
   var id=document.getElementById('mu-id').value;
   var nombre=document.getElementById('mu-nombre').value.trim();
   var username=document.getElementById('mu-username').value.trim();
-  var pass=document.getElementById('mu-pass').value;
+  var pass=document.getElementById('mu-pass').value.trim();
   var rol=document.getElementById('mu-rol').value;
-
-  if(!nombre || !username){
-    alert('Nombre y usuario son obligatorios.');
-    return;
+  if(!nombre||!username||!pass){alert('Completa todos los campos.');return;}
+  if(pass.length<4){alert('La contrase\u00f1a debe tener m\u00ednimo 4 caracteres.');return;}
+  var obj={id:id||('u'+Date.now()),nombre:nombre,username:username,password:pass,rol:rol};
+  if(id){
+    for(var i=0;i<db.config.usuarios.length;i++){if(db.config.usuarios[i].id===id){db.config.usuarios[i]=obj;break;}}
+  } else {
+    db.config.usuarios.push(obj);
   }
-
-  if(!id && (!pass || pass.length<4)){
-    alert('La contraseña debe tener mínimo 4 caracteres.');
-    return;
-  }
-
-  if(id && pass && pass.length<4){
-    alert('La nueva contraseña debe tener mínimo 4 caracteres.');
-    return;
-  }
-
-  sincronizar('saveUsuario',{
-    id:id,
-    nombre:nombre,
-    username:username,
-    password:pass,
-    rol:rol
-  },function(ok,d){
-    if(!ok){
-      alert((d&&d.msg)?d.msg:'No se pudo guardar el usuario.');
-      return;
-    }
-
-    cerrarModal('modal-usuario');
-    cargarUsuariosAdmin();
-  });
+  saveDB();
+  sincronizar('saveConfig',db.config);
+  cerrarModal('modal-usuario');
+  renderUsuariosAdmin();
 }
 
 function eliminarUsuario(id) {
-  if(db.currentUser && db.currentUser.id===id){
-    alert('No puedes eliminar tu propio usuario.');
-    return;
-  }
-
-  if(!confirm('¿Eliminar usuario?')) return;
-
-  sincronizar('deleteUsuario',{id:id},function(ok,d){
-    if(!ok){
-      alert((d&&d.msg)?d.msg:'No se pudo eliminar el usuario.');
-      return;
-    }
-
-    cargarUsuariosAdmin();
-  });
+  if(db.config.usuarios.length<=1){alert('Debes tener al menos un usuario.');return;}
+  if(db.currentUser&&db.currentUser.id===id){alert('No puedes eliminar tu propio usuario.');return;}
+  if(!confirm('\u00BFEliminar usuario?')) return;
+  db.config.usuarios=db.config.usuarios.filter(function(u){return u.id!==id;});
+  saveDB();
+  renderUsuariosAdmin();
 }
 
 /* ===== CATÁLOGO ===== */
@@ -1981,25 +1836,13 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 
 /* ===================== GOOGLE SHEETS ===================== */
 function sincronizar(accion, payload, cb) {
-  var url = API_URL;
-  if (!url) { if(cb) cb(false, null); return; }
-
-  var params = '?accion=' + encodeURIComponent(accion)
-    + '&data=' + encodeURIComponent(JSON.stringify(payload))
-    + authQuery();
-
+  var url = db.config.gasUrl || '';
+  if (!url) { if(cb) cb(false); return; }
+  var params = '?accion=' + encodeURIComponent(accion) + '&data=' + encodeURIComponent(JSON.stringify(payload));
   fetch(url + params, { method: 'GET', redirect: 'follow' })
     .then(function(r) { return r.json(); })
-    .then(function(d) {
-      if (manejarNoAutorizado(d)) {
-        if(cb) cb(false, d);
-        return;
-      }
-      if(cb) cb(d.status === 'ok', d);
-    })
-    .catch(function() {
-      if(cb) cb(false, null);
-    });
+    .then(function(d) { if(cb) cb(d.status === 'ok'); })
+    .catch(function() { if(cb) cb(false); });
 }
 
 /* ===================== UTIL ===================== */
@@ -2152,18 +1995,12 @@ loginAs = function(user) {
 
 
 /* ===================== CARGAR DESDE SHEETS ===================== */
-function cargarDesdeSheets(cb, _localPendientes, authTokenOverride) {
-  var url = API_URL;
+function cargarDesdeSheets(cb, _localPendientes) {
+  var url = db.config.gasUrl || '';
   if (!url) { if(cb) cb(false); return; }
-  fetch(url + '?accion=getAll' + authQuery(authTokenOverride), { method:'GET', redirect:'follow', cache:'no-store' })
+  fetch(url + '?accion=getAll', { method:'GET', redirect:'follow' })
     .then(function(r) { return r.json(); })
     .then(function(data) {
-      if (data.backendVersion && data.backendVersion !== EXPECTED_BACKEND_VERSION) {
-        alert('Versiones incompatibles.\n\nPWA: '+EXPECTED_BACKEND_VERSION+'\nBackend: '+data.backendVersion);
-        if(cb) cb(false);
-        return;
-      }
-      if (manejarNoAutorizado(data)) { if(cb) cb(false); return; }
       if (data.status !== 'ok') { if(cb) cb(false); return; }
       if (Array.isArray(data.recibos)) {
         var pendientes=Array.isArray(_localPendientes)?_localPendientes:[];
@@ -2243,6 +2080,11 @@ function cargarDesdeSheets(cb, _localPendientes, authTokenOverride) {
           if (k === 'gasUrl') return; // NUNCA sobrescribir la URL embebida
           if (numKeys.indexOf(k) >= 0) db.config[k] = parseFloat(data.config[k])||0;
           else db.config[k] = data.config[k];
+        });
+      }
+      if (data.usuarios && data.usuarios.length) {
+        db.config.usuarios = data.usuarios.map(function(u) {
+          return { id: String(u.id), nombre: String(u.nombre), username: String(u.username), password: String(u.password), rol: String(u.rol) };
         });
       }
       saveDB();
@@ -2406,39 +2248,21 @@ function agregarReferidoId(clienteId) {
 loadDB();
 // Fuente de verdad unica: la URL del HTML siempre tiene prioridad sobre localStorage
 db.config.gasUrl='https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec';
-// Restaurar sesión sólo si el token existente sigue siendo válido.
-(function(){
-  var tokenSnapshot=localStorage.getItem('aca_token')||'';
-  var savedSnapshot=localStorage.getItem('aca_session');
-
-  if(!tokenSnapshot||!savedSnapshot){
-    limpiarSesionLocal();
-    return;
-  }
-
-  fetch(API_URL+'?accion=validarSesion&token='+encodeURIComponent(tokenSnapshot),{
-    method:'GET',redirect:'follow',cache:'no-store'
-  })
-  .then(function(r){return r.json();})
-  .then(function(d){
-    // Una respuesta vieja nunca puede borrar un login nuevo.
-    if(getAuthToken()!==tokenSnapshot) return;
-
-    if(d.backendVersion!==EXPECTED_BACKEND_VERSION){
-      limpiarSesionLocal();
-      return;
+// Restaurar sesion si existe
+(function() {
+  try {
+    var saved = localStorage.getItem('aca_session');
+    if (saved) {
+      var user = JSON.parse(saved);
+      // Verificar que el usuario sigue existiendo
+      var exists = db.config.usuarios.some(function(u) { return u.id === user.id && u.password === user.password; });
+      if (exists) { loginAs(user); return; }
+      localStorage.removeItem('aca_session');
     }
-
-    if(d.status==='ok'&&d.user){
-      loginAs(d.user,tokenSnapshot);
-    }else{
-      limpiarSesionLocal();
-    }
-  })
-  .catch(function(){
-    if(getAuthToken()===tokenSnapshot) limpiarSesionLocal();
-  });
+  } catch(e) {}
 })();
+
+
 </script>
 </body>
 </html>
