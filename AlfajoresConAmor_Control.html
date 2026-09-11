@@ -532,19 +532,95 @@ function waCobroDirecto(deudorId) {
 }
 
 /* ===================== TABS ===================== */
+var recibosHistoricosCargados=false;
+var cargaHistoricoEnCurso=null;
+
+function normalizarRecibosCliente(arr) {
+  return (Array.isArray(arr)?arr:[]).map(function(r) {
+    var fecha = r.fecha;
+    if (fecha && String(fecha).indexOf('T') >= 0) fecha = String(fecha).split('T')[0];
+    if (fecha instanceof Date) fecha = fecha.toISOString().split('T')[0];
+    return {
+      id: String(r.id), tipo: String(r.tipo||''), fecha: String(fecha||''),
+      descripcion: String(r.descripcion||''), cantidad: parseFloat(r.cantidad)||1,
+      valor: parseFloat(r.valor)||0, total: parseFloat(r.total)||0,
+      cliente: String(r.cliente||''), tel: String(r.tel||''),
+      clienteId: String(r.clienteId||''),
+      responsable: String(r.responsable||''), recibo: String(r.recibo||''),
+      notas: String(r.notas||''), pago: String(r.pago||'contado'),
+      fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0,
+      items: Array.isArray(r.items)?r.items:[]
+    };
+  });
+}
+
+// Carga el histórico completo SOLO cuando una pantalla realmente lo necesita.
+// La primera pantalla operativa continúa trabajando únicamente con el mes actual.
+function asegurarRecibosHistoricos(callback) {
+  if (recibosHistoricosCargados) {
+    if(callback) callback(true);
+    return;
+  }
+
+  if (cargaHistoricoEnCurso) {
+    cargaHistoricoEnCurso.then(function(ok){ if(callback) callback(ok); });
+    return;
+  }
+
+  var url=db.config.gasUrl||'';
+  if(!url){ if(callback) callback(false); return; }
+
+  // Preservar ventas locales todavía no sincronizadas.
+  var pendientes=db.recibos.filter(function(r){
+    return r.recibo&&String(r.recibo).indexOf('LOCAL')===0;
+  });
+
+  cargaHistoricoEnCurso=fetch(url+'?accion=getRecibosHistoricos',{method:'GET',redirect:'follow'})
+    .then(function(r){return r.json();})
+    .then(function(data){
+      if(data.status!=='ok'||!Array.isArray(data.recibos)) return false;
+
+      db.recibos=normalizarRecibosCliente(data.recibos);
+
+      var ids={};
+      db.recibos.forEach(function(r){ids[r.id]=true;});
+      pendientes.forEach(function(r){
+        if(!ids[r.id]) db.recibos.push(r);
+      });
+
+      recibosHistoricosCargados=true;
+      saveDB();
+      return true;
+    })
+    .catch(function(){return false;})
+    .then(function(ok){
+      cargaHistoricoEnCurso=null;
+      return ok;
+    });
+
+  cargaHistoricoEnCurso.then(function(ok){
+    if(!ok) alert('No se pudo cargar el histórico completo. Se mantienen los datos del mes actual.');
+    if(callback) callback(ok);
+  });
+}
+
 function switchTab(btn) {
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
   document.querySelectorAll('.tab-pane').forEach(function(p){p.classList.remove('active');});
   btn.classList.add('active');
   var tab=btn.getAttribute('data-tab');
   document.getElementById('tab-'+tab).classList.add('active');
-  if(tab==='historial') renderHistorial();
-  if(tab==='graficas') renderGraficas();
-  if(tab==='pyg'){setDefaultDates('pyg-desde','pyg-hasta');calcPyG();}
-  if(tab==='balance') calcBalance();
+
+  if(tab==='historial') asegurarRecibosHistoricos(function(){renderHistorial();});
+  if(tab==='graficas') asegurarRecibosHistoricos(function(){renderGraficas();});
+  if(tab==='pyg'){
+    setDefaultDates('pyg-desde','pyg-hasta');
+    asegurarRecibosHistoricos(function(){calcPyG();});
+  }
+  if(tab==='balance') asegurarRecibosHistoricos(function(){calcBalance();});
   if(tab==='crm') renderCRM();
-  if(tab==='postventa') renderPostventa();
-  if(tab==='ejecutivo') calcEjecutivo();
+  if(tab==='postventa') asegurarRecibosHistoricos(function(){renderPostventa();});
+  if(tab==='ejecutivo') asegurarRecibosHistoricos(function(){calcEjecutivo();});
   if(tab==='admin') initAdmin();
   if(tab==='deudores') renderDeudores();
 }
@@ -1926,25 +2002,14 @@ function cargarDesdeSheets(cb, _localPendientes) {
     .then(function(r) { return r.json(); })
     .then(function(data) {
       if (data.status !== 'ok') { if(cb) cb(false); return; }
-      if (data.recibos && data.recibos.length) {
+      if (Array.isArray(data.recibos)) {
         var pendientes=Array.isArray(_localPendientes)?_localPendientes:[];
-        db.recibos = data.recibos.map(function(r) {
-        // Fix fecha: Sheets may return Date object or timestamp string
-        var fecha = r.fecha;
-        if (fecha && String(fecha).indexOf('T') >= 0) fecha = String(fecha).split('T')[0];
-        if (fecha instanceof Date) fecha = fecha.toISOString().split('T')[0];
-        return {
-          id: String(r.id), tipo: String(r.tipo||''), fecha: String(fecha||''),
-          descripcion: String(r.descripcion||''), cantidad: parseFloat(r.cantidad)||1,
-          valor: parseFloat(r.valor)||0, total: parseFloat(r.total)||0,
-          cliente: String(r.cliente||''), tel: String(r.tel||''),
-          clienteId: String(r.clienteId||''),
-          responsable: String(r.responsable||''), recibo: String(r.recibo||''),
-          notas: String(r.notas||''), pago: String(r.pago||'contado'),
-          fechaCobro: String(r.fechaCobro||''), ts: parseFloat(r.ts)||0,
-          items: Array.isArray(r.items)?r.items:[]
-        };
-        });
+        // ETAPA 3B: getAll entrega únicamente Recibos_YYYY_MM del mes vigente.
+        // Incluso si el mes está vacío, se reemplaza el estado local para evitar
+        // arrastrar históricos antiguos desde localStorage.
+        db.recibos=normalizarRecibosCliente(data.recibos);
+        recibosHistoricosCargados=false;
+
         // Reincorporar locales que no llegaron a Sheets
         var sheetsIds=db.recibos.map(function(r){return r.id;});
         var noSync=pendientes.filter(function(r){return sheetsIds.indexOf(r.id)<0;});
