@@ -307,6 +307,10 @@ tr:hover td{background:rgba(130,73,19,.04);}
 <div class="modal-overlay" id="modal-alerta-cumple"><div class="modal"><h3>&#x1F382; Cumplea&ntilde;os hoy</h3><p style="color:#6b4226;margin-bottom:14px;">Los siguientes clientes cumplen a&ntilde;os hoy.</p><div id="alerta-cumple-lista"></div><div class="modal-footer"><button class="btn btn-secondary" onclick="cerrarModal('modal-alerta-cumple')">Cerrar</button></div></div></div>
 
 <script>
+// URL pública del Web App. No contiene datos ni credenciales.
+// Debe existir antes del login; la autenticación del backend protege las acciones privadas.
+var API_URL = 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec';
+
 var db = {
   recibos: [],
   productos: [],
@@ -316,7 +320,7 @@ var db = {
   deudores: [],
   puntos: {},
   config: {
-    gasUrl: 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec', // sobreescrita en el boot — editar solo ahi
+    gasUrl: 'https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3zSCxgajmf8sphy9q8wgfZhTOgI6h0A8teGytk67KN8jR2dg/exec', // compatibilidad/configuración; la conexión usa API_URL
     waPrefijo: '57',
     waMsgTemplate: 'Hola {nombre}, gracias por tu compra en Alfajores con Amor \uD83E\uDDC1 \u00A1Fue un placer atenderte!',
     waMsgCobro: 'Hola {nombre}, te recordamos que ma\u00F1ana {fecha} acordamos el pago de tu pedido de los deliciosos Alfajores por un valor de ${valor}. \u00BFDeseas pagar por transferencia o prefieres que pasemos a recogerte el efectivo? \uD83E\uDDC1',
@@ -413,20 +417,18 @@ function doLogin() {
   var btn=document.querySelector('.btn-login');
   if(btn){btn.disabled=true;btn.textContent='Verificando...';}
 
-  var url=db.config.gasUrl||'';
+  var url=API_URL;
   if(!url){
     if(btn){btn.disabled=false;btn.textContent='Ingresar';}
     document.getElementById('login-error').style.display='block';
     return;
   }
 
-  fetch(url, {
-    method:'POST',
+  var loginData = encodeURIComponent(JSON.stringify({username:u,password:p}));
+  fetch(url+'?accion=login&data='+loginData, {
+    method:'GET',
     redirect:'follow',
-    body: JSON.stringify({
-      accion:'login',
-      data:{username:u,password:p}
-    })
+    cache:'no-store'
   })
     .then(function(r){return r.json();})
     .then(function(d){
@@ -506,7 +508,7 @@ function loginAs(user, token) {
 }
 
 function doLogout() {
-  var url=db.config.gasUrl||'';
+  var url=API_URL;
   var token=getAuthToken();
 
   if(url && token){
@@ -638,7 +640,7 @@ function asegurarRecibosHistoricos(callback) {
     return;
   }
 
-  var url=db.config.gasUrl||'';
+  var url=API_URL;
   if(!url){ if(callback) callback(false); return; }
 
   // Preservar ventas locales todavía no sincronizadas.
@@ -980,7 +982,7 @@ function guardarRecibo() {
   // Capturar canje ANTES de limpiarNE
   var localCanjeAplicado=canjeAplicado;
   var localCanjeData=canjeAplicado?{nombre:canjeData.nombre,pct:canjeData.pct,totalAntes:canjeData.totalAntes,totalDespues:canjeData.totalDespues,ptsCanjeados:canjeData.ptsCanjeados,ptsTotales:canjeData.ptsTotales,ptsGanados:canjeData.ptsGanados}:{};
-  var url=db.config.gasUrl||'';
+  var url=API_URL;
   var pts=tipo==='Venta'&&cliente?Math.floor(total/1000)*(db.config.ptosPorMil||1):0;
 
   // Muestra modal WA después de guardar (solo admin)
@@ -1321,7 +1323,7 @@ function pagarDeuda(id) {
       };
       db.recibos.push(rec);
       saveDB();
-      var gasUrl=db.config.gasUrl||'';
+      var gasUrl=API_URL;
       if(gasUrl){
         var deudorId=id;
         var params='?accion=saveReceipt&data='+encodeURIComponent(JSON.stringify(rec))+authQuery();
@@ -1583,7 +1585,7 @@ function calcEjecutivo() {
 
 /* ===================== ADMIN ===================== */
 function initAdmin() {
-  document.getElementById('cfg-gasurl').value=db.config.gasUrl||'';
+  document.getElementById('cfg-gasurl').value=API_URL;
   document.getElementById('cfg-waprefijo').value=db.config.waPrefijo||'57';
   document.getElementById('cfg-wamsg').value=db.config.waMsgTemplate||'';
   document.getElementById('cfg-wacobro').value=db.config.waMsgCobro||'';
@@ -1983,7 +1985,7 @@ document.querySelectorAll('.modal-overlay').forEach(function(o){
 
 /* ===================== GOOGLE SHEETS ===================== */
 function sincronizar(accion, payload, cb) {
-  var url = db.config.gasUrl || '';
+  var url = API_URL;
   if (!url) { if(cb) cb(false, null); return; }
 
   var params = '?accion=' + encodeURIComponent(accion)
@@ -2155,7 +2157,7 @@ loginAs = function(user) {
 
 /* ===================== CARGAR DESDE SHEETS ===================== */
 function cargarDesdeSheets(cb, _localPendientes) {
-  var url = db.config.gasUrl || '';
+  var url = API_URL;
   if (!url) { if(cb) cb(false); return; }
   fetch(url + '?accion=getAll' + authQuery(), { method:'GET', redirect:'follow' })
     .then(function(r) { return r.json(); })
@@ -2415,7 +2417,7 @@ db.config.gasUrl='https://script.google.com/macros/s/AKfycbz_Qs3Qw_6yGQZJSZf1qz3
   }
 
   try {
-    var url = db.config.gasUrl || '';
+    var url = API_URL;
 
     fetch(url+'?accion=validarSesion&token='+encodeURIComponent(token),{
       method:'GET',
